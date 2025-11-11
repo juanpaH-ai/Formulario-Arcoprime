@@ -1,2 +1,2 @@
 # Formulario-Arcoprime
-Formulario de Incidentes de calidad. 
+Formulario de Incidentes de Calidad. 
