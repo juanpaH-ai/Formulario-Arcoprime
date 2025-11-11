@@ -1,11 +1,12 @@
-import { Env, corsHeaders, getAccessToken, json, ok } from "./_google";
+import { readEnv, corsHeaders, getAccessToken, json, ok } from "./_google";
 export const config = { runtime: "edge" };
 
-export default async function handler(req: Request, env: Env) {
+export default async function handler(req: Request) {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(req) });
   if (req.method !== "GET") return json({ ok: false, error: "Método no permitido" }, 405, req);
 
   try {
+    const env = readEnv();
     const token = await getAccessToken(env);
     const SHEET_TND = env.SHEET_TND || "Tiendas";
     const SHEET_CAT = env.SHEET_CAT || "Catalogos";
@@ -15,7 +16,10 @@ export default async function handler(req: Request, env: Env) {
       `https://sheets.googleapis.com/v4/spreadsheets/${id}/values/${encodeURIComponent(`${SHEET_TND}!A2:B`)}`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
-    ok(tiendasRes);
+    if (!tiendasRes.ok) {
+      const txt = await tiendasRes.text();
+      throw new Error(`Tiendas error: ${txt}`);
+    }
     const tiendasJson = await tiendasRes.json();
     const tiendas = (tiendasJson.values || [])
       .map((r: string[]) => ({ id: String(r[0] || ""), nombre: String(r[1] || "") }))
@@ -26,7 +30,7 @@ export default async function handler(req: Request, env: Env) {
         `https://sheets.googleapis.com/v4/spreadsheets/${id}/values/${encodeURIComponent(range)}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      ok(r);
+      if (!r.ok) throw new Error(`${range} error: ${await r.text()}`);
       const j = await r.json();
       return (j.values || []).map((v: string[]) => v[0]).filter(Boolean);
     }
