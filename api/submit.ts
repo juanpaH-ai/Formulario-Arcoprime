@@ -33,7 +33,9 @@ export default async function handler(req: Request) {
 
     const env = readEnv();
     const token = await getAccessToken(env);
-    const id = env.GOOGLE_SHEETS_ID;
+    import { resolveSheetId } from "./_google";
+    const id = resolveSheetId(env.GOOGLE_SHEETS_ID);
+
     const SHEET_TND  = env.SHEET_TND  || "Tiendas";
     const SHEET_RESP = env.SHEET_RESP || "Respuestas";
 
