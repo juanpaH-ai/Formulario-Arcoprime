@@ -102,15 +102,23 @@ async function signRS256(unsigned: string, pem: string) {
 }
 
 function pemToArrayBuffer(pem: string) {
+  if (!pem.includes('BEGIN PRIVATE KEY')) {
+    throw new Error('PEM inválido: falta BEGIN PRIVATE KEY');
+  }
   const b64 = pem
     .replace(/-----BEGIN PRIVATE KEY-----/g, "")
     .replace(/-----END PRIVATE KEY-----/g, "")
     .replace(/\s+/g, "");
-  const raw = atob(b64);
-  const bytes = new Uint8Array(raw.length);
-  for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
-  return bytes.buffer;
+  try {
+    const raw = atob(b64);
+    const bytes = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+    return bytes.buffer;
+  } catch {
+    throw new Error('Base64 inválido en la clave. Revisa saltos de línea o copia/pegado del private_key.');
+  }
 }
+
 
 export function normalize(s: string) {
   return (s || "")
