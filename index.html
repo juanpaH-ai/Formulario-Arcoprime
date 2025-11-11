@@ -1,126 +1,292 @@
 <!doctype html>
-<html>
+<html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Registro de Incidencias</title>
+  <meta name="theme-color" content="#003B70" />
+
   <style>
-    body { font-family:Poppins, Arial, sans-serif; background:#f9f9f9; max-width:900px; margin:24px auto; padding:20px; color:#222; }
-    header { background:#003B70; color:#fff; padding:20px; text-align:center; }
-    .card { background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.1); padding:20px; margin-bottom:16px; }
-    .row { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:12px; }
-    label { font-weight:600; display:block; margin-bottom:6px; }
-    input[type="text"], input[type="date"], select, textarea { width:100%; padding:10px; border:1px solid #ccc; border-radius:8px; box-sizing:border-box; }
-    textarea { min-height:80px; }
-    .hidden { display:none; }
-    .actions { display:flex; justify-content:flex-end; gap:12px; margin-top:10px; }
-    button { padding:10px 18px; border:0; border-radius:8px; cursor:pointer; font-weight:600; }
-    .primary { background:#4AC66C; color:#fff; } .ghost { background:#e0e0e0; }
-    .invalid { border-color:#d93025 !important; background:#feecec !important; }
-    #msg.success{ color:#4AC66C } #msg.error{ color:red }
+    /* Barra superior solo con logos */
+.topbar{
+  position: sticky;          /* siempre visible en scroll */
+  top: 0;
+  z-index: 50;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* Tamaños pensados para teléfono */
+.topbar .logo{
+  height: 36px;              /* logos laterales */
+  width: auto;
+  object-fit: contain;
+}
+.topbar .center{
+  height: 44px;              /* sello al centro, un poco mayor */
+}
+
+/* En pantallas un poco más grandes subimos levemente el tamaño */
+@media (min-width: 480px){
+  .topbar .logo{ height: 42px; }
+  .topbar .center{ height: 56px; }
+}
+
+    :root{
+      --primary:#003B70;   /* azul cabecera */
+      --accent:#4AC66C;    /* botón principal */
+      --muted:#6b7280;     /* grises texto */
+      --bg:#f6f7fb;        /* fondo app */
+      --card:#ffffff;      /* fondo tarjeta */
+      --radius:16px;
+      --shadow:0 10px 22px rgba(0,0,0,.08);
+    }
+
+    /* Layout mobile-first tipo app */
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Poppins", "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      background: var(--bg);
+      color:#111827;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    .app{
+      min-height:100%;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      padding:clamp(12px,3vw,20px);
+    }
+
+    /* Cabecera estilo ejemplo */
+    .hero{
+      width:100%;
+      max-width:520px;
+      background:var(--primary);
+      color:#fff;
+      border-radius:20px;
+      box-shadow: var(--shadow);
+      padding:20px 16px;
+      text-align:center;
+      position:relative;
+      overflow:hidden;
+    }
+    .hero h1{
+      font-size:clamp(20px,5vw,26px);
+      margin:6px 0 4px;
+      font-weight:800;
+      letter-spacing:.2px;
+    }
+    .hero h2{
+      font-size:clamp(13px,3.5vw,16px);
+      margin:0;
+      font-weight:500;
+      opacity:.95;
+    }
+
+    /* Logos de las 4 esquinas */
+    .corner{
+      position:fixed;
+      width:56px; height:56px;
+      z-index:9;
+      opacity:.95;
+    }
+    .corner img{width:100%; height:100%; object-fit:contain;}
+    .tl{top:8px; left:8px;}
+    .tr{top:8px; right:8px;}
+    .bl{bottom:8px; left:8px;}
+    .br{bottom:8px; right:8px;}
+
+    /* Tarjeta del formulario */
+    .card{
+      width:100%;
+      max-width:520px;
+      background:var(--card);
+      border-radius:var(--radius);
+      box-shadow: var(--shadow);
+      padding:16px;
+      margin:14px 0 100px; /* espacio para FAB */
+    }
+    .section-title{
+      font-size:16px; font-weight:700; margin:8px 2px 12px;
+    }
+
+    /* Campos: una columna en móvil, cómodos al tacto */
+    .field{margin-bottom:12px;}
+    label{display:block; font-size:13px; font-weight:600; color:#111827; margin:0 0 6px 2px;}
+    input[type="text"], input[type="date"], select, textarea{
+      width:100%;
+      padding:14px 12px;
+      border:1px solid #e5e7eb;
+      border-radius:12px;
+      background:#fff;
+      font-size:15px;
+      outline:none;
+      box-sizing:border-box;
+    }
+    textarea{min-height:96px; resize:vertical;}
+    .invalid{border-color:#ef4444; background:#fff5f5;}
+    .hint{font-size:12px; color:var(--muted); margin:6px 2px 0}
+
+    /* Mensajes */
+    #msg{margin-top:10px; font-weight:600; text-align:center}
+    #msg.success{color:#16a34a}
+    #msg.error{color:#dc2626}
+
+    /* Botón flotante (estilo acción principal móvil) */
+    .fab{
+      position:fixed;
+      bottom:18px;
+      left:50%;
+      transform:translateX(-50%);
+      width:min(520px, calc(100% - 24px));
+      display:flex; gap:8px;
+    }
+    .btn{
+      appearance:none; border:0; border-radius:14px; padding:14px 16px;
+      font-weight:800; letter-spacing:.2px; cursor:pointer; flex:1;
+    }
+    .btn-primary{background:var(--accent); color:#fff; box-shadow:0 10px 18px rgba(74,198,108,.35);}
+    .btn-ghost{background:#e5e7eb; color:#111827;}
+
+    /* Dots de paso (decorativo como en el ejemplo) */
+    .dots{display:flex; justify-content:center; gap:6px; margin-top:10px}
+    .dot{width:8px;height:8px;border-radius:50%; background:rgba(255,255,255,.5)}
+    .dot.active{background:#fff}
+
+    /* Desktop: estrechamos columnas para no romper el “look móvil centrado” */
+    @media (min-width:720px){
+      .app{padding:28px}
+    }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Formulario de Registro de Eventos</h1>
-    <h2>Comida Segura - Calidad Arcoprime</h2>
-  </header>
+  
+<!-- BARRA SUPERIOR DE LOGOS -->
+<div class="topbar" role="banner">
+  <img src="/logos/arcoprime.png" alt="Arcoprime" class="logo left">
+  <img src="/logos/comida-segura.png" alt="Comida Segura — Calidad Arcoprime" class="logo center">
+  <img src="/logos/copec.png" alt="Copec" class="logo right">
+</div>
 
-  <div class="card">
-    <h3>Datos Generales</h3>
-    <div class="row">
-      <div>
+  <div class="app">
+    <!-- CABECERA -->
+    <header class="hero" role="banner">
+      <h1>Check-in Comida Segura</h1>
+      <h2>Calidad Arcoprime</h2>
+      <div class="dots" aria-hidden="true">
+        <span class="dot active"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      </div>
+    </header>
+
+    <!-- FORM CARD -->
+    <main class="card" role="main">
+      <div class="section-title">Datos Generales</div>
+
+      <div class="field">
         <label for="tienda">Tienda</label>
         <input list="tiendaList" id="tienda" placeholder="Escribe el nombre del local" autocomplete="off" required>
         <datalist id="tiendaList"></datalist>
       </div>
-      <div>
+
+      <div class="field">
         <label for="fecha">Fecha del evento</label>
         <input type="date" id="fecha" required>
       </div>
-    </div>
-    <div class="row">
-      <div>
+
+      <div class="field">
         <label for="nombre">Nombre y Apellido *</label>
         <input type="text" id="nombre" placeholder="Tu nombre completo" required>
       </div>
-      <div>
+
+      <div class="field">
         <label for="apellido">Cargo *</label>
         <input type="text" id="apellido" placeholder="Cargo" required>
       </div>
-    </div>
-    <div>
-      <label for="tipoEvento">Tipo de Evento</label>
-      <select id="tipoEvento" required>
-        <option value="">Selecciona...</option>
-      </select>
-    </div>
-  </div>
 
-  <div id="blkPlaga" class="card hidden">
-    <h3>Detalle - Plaga</h3>
-    <div class="row">
-      <div>
-        <label for="tipoPlaga">Tipo de Plaga</label>
-        <select id="tipoPlaga" required></select>
+      <div class="field">
+        <label for="tipoEvento">Tipo de Evento</label>
+        <select id="tipoEvento" required>
+          <option value="">Selecciona...</option>
+        </select>
       </div>
-      <div>
-        <label for="tipoEventoPlaga">Tipo de Evento Plaga</label>
-        <select id="tipoEventoPlaga" required></select>
-      </div>
-    </div>
-    <div class="row">
-      <div>
-        <label for="sector">Sector del Hallazgo</label>
-        <select id="sector" required></select>
-      </div>
-      <div>
-        <label for="comentarioPlaga">Comentario</label>
-        <textarea id="comentarioPlaga" required></textarea>
-      </div>
-    </div>
-  </div>
 
-  <div id="blkAroma" class="card hidden">
-    <h3>Detalle - Aroma</h3>
-    <div class="row">
-      <div>
-        <label for="aromaCat">Categoría</label>
-        <select id="aromaCat" required></select>
-      </div>
-      <div>
-        <label for="comentarioAroma">Comentario</label>
-        <textarea id="comentarioAroma" required></textarea>
-      </div>
+      <!-- BLOQUE PLAGA -->
+      <section id="blkPlaga" class="hidden">
+        <div class="section-title">Detalle — Plaga</div>
+        <div class="field">
+          <label for="tipoPlaga">Tipo de Plaga</label>
+          <select id="tipoPlaga" required></select>
+        </div>
+        <div class="field">
+          <label for="tipoEventoPlaga">Tipo de Evento Plaga</label>
+          <select id="tipoEventoPlaga" required></select>
+        </div>
+        <div class="field">
+          <label for="sector">Sector del Hallazgo</label>
+          <select id="sector" required></select>
+        </div>
+        <div class="field">
+          <label for="comentarioPlaga">Comentario</label>
+          <textarea id="comentarioPlaga" placeholder="Describe brevemente lo encontrado..." required></textarea>
+        </div>
+      </section>
+
+      <!-- BLOQUE AROMA -->
+      <section id="blkAroma" class="hidden">
+        <div class="section-title">Detalle — Aroma</div>
+        <div class="field">
+          <label for="aromaCat">Categoría</label>
+          <select id="aromaCat" required></select>
+        </div>
+        <div class="field">
+          <label for="comentarioAroma">Comentario</label>
+          <textarea id="comentarioAroma" placeholder="Observaciones..." required></textarea>
+        </div>
+      </section>
+
+      <!-- BLOQUE QUÍMICO -->
+      <section id="blkQuimico" class="hidden">
+        <div class="section-title">Detalle — Químico</div>
+        <div class="field">
+          <label for="quimCat">Categoría</label>
+          <select id="quimCat" required></select>
+        </div>
+        <div class="field">
+          <label for="comentarioQuim">Comentario</label>
+          <textarea id="comentarioQuim" placeholder="Observaciones..." required></textarea>
+        </div>
+      </section>
+
+      <p id="msg" role="status" aria-live="polite"></p>
+      <p class="hint">Consejo: utiliza el autocompletar para seleccionar la tienda exacta.</p>
+    </main>
+
+    <!-- BOTONES FLOTANTES -->
+    <div class="fab" role="group" aria-label="Acciones">
+      <button class="btn btn-ghost" type="button" id="btnLimpiar">Limpiar</button>
+      <button class="btn btn-primary" type="button" id="btnEnviar">Enviar</button>
     </div>
   </div>
-
-  <div id="blkQuimico" class="card hidden">
-    <h3>Detalle - Químico</h3>
-    <div class="row">
-      <div>
-        <label for="quimCat">Categoría</label>
-        <select id="quimCat" required></select>
-      </div>
-      <div>
-        <label for="comentarioQuim">Comentario</label>
-        <textarea id="comentarioQuim" required></textarea>
-      </div>
-    </div>
-  </div>
-
-  <div class="actions">
-    <button class="ghost" type="button" id="btnLimpiar">Limpiar</button>
-    <button class="primary" type="button" id="btnEnviar">Enviar</button>
-  </div>
-  <p id="msg"></p>
 
   <script>
     let TIENDAS = [];
     const $ = id => document.getElementById(id);
 
-    init();
+    // utilidades UI
+    function toggle(el, show){ el.classList.toggle('hidden', !show); }
+    function setInvalid(id, inv){ const el = $(id); if (el) el.classList.toggle('invalid', !!inv); }
+    function setMsg(t, isErr=false){ const m = $('msg'); m.textContent = t; m.className = isErr? 'error' : 'success'; }
 
+    // init
+    init();
     async function init() {
       try {
         const r = await fetch('/api/init', { method:'GET' });
@@ -128,47 +294,37 @@
         if (!r.ok || !j.ok) throw new Error(j.error || 'Error init');
 
         TIENDAS = j.tiendas || [];
-
+        // datalist tiendas
         const dl = $('tiendaList'); dl.innerHTML = '';
         TIENDAS.forEach(t => { const o = document.createElement('option'); o.value = t.nombre; dl.appendChild(o); });
 
-        const te = $('tipoEvento'); te.innerHTML = '<option value="">Selecciona...</option>';
-        (j.tipoEvento || []).forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; te.appendChild(o); });
-
-        const tep = $('tipoEventoPlaga'); tep.innerHTML = '<option value="">Selecciona...</option>';
-        (j.tipoEventoPlaga || []).forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; tep.appendChild(o); });
-
-        const tp = $('tipoPlaga'); tp.innerHTML = '<option value="">Selecciona...</option>';
-        (j.tipoPlaga || []).forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; tp.appendChild(o); });
-
-        const sc = $('sector'); sc.innerHTML = '<option value="">Selecciona...</option>';
-        (j.sectores || []).forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; sc.appendChild(o); });
-
-        const ac = $('aromaCat'); ac.innerHTML = '<option value="">Selecciona...</option>';
-        (j.catAroma || []).forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; ac.appendChild(o); });
-
-        const qc = $('quimCat'); qc.innerHTML = '<option value="">Selecciona...</option>';
-        (j.catQuimico || []).forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; qc.appendChild(o); });
-
+        // selects
+        const fill = (id, arr) => {
+          const el = $(id);
+          el.innerHTML = '<option value="">Selecciona...</option>';
+          (arr||[]).forEach(v => { const o = document.createElement('option'); o.value=v; o.textContent=v; el.appendChild(o); });
+        };
+        fill('tipoEvento',       j.tipoEvento);
+        fill('tipoEventoPlaga',  j.tipoEventoPlaga);
+        fill('tipoPlaga',        j.tipoPlaga);
+        fill('sector',           j.sectores);
+        fill('aromaCat',         j.catAroma);
+        fill('quimCat',          j.catQuimico);
       } catch (e) {
-        setMsg('❌ Error cargando catálogos: ' + e.message, true);
+        setMsg('❌ Error cargando catálogos: ' + (e.message||e), true);
       }
 
-      $('tipoEvento').addEventListener('change', onTipoEventoChange);
+      $('tipoEvento').addEventListener('change', () => {
+        const t = $('tipoEvento').value;
+        toggle($('blkPlaga'),   t === 'Plaga');
+        toggle($('blkAroma'),   t === 'Aroma');
+        toggle($('blkQuimico'), t === 'Químico');
+      });
       $('btnEnviar').addEventListener('click', enviar);
       $('btnLimpiar').addEventListener('click', () => limpiar(true));
     }
 
-    function onTipoEventoChange(){
-      const tipo = $('tipoEvento').value;
-      toggle($('blkPlaga'), tipo === 'Plaga');
-      toggle($('blkAroma'), tipo === 'Aroma');
-      toggle($('blkQuimico'), tipo === 'Químico');
-    }
-    function toggle(el, show){ el.classList.toggle('hidden', !show); }
-    function setInvalid(id, inv){ const el = $(id); if (el) el.classList.toggle('invalid', !!inv); }
-    function setMsg(t, isErr=false){ const m = $('msg'); m.textContent = t; m.className = isErr? 'error' : 'success'; }
-
+    // validación mínima
     function validar(){
       ['tienda','fecha','nombre','apellido','tipoEvento','tipoPlaga','tipoEventoPlaga','sector','comentarioPlaga','aromaCat','comentarioAroma','quimCat','comentarioQuim']
         .forEach(id => setInvalid(id, false));
@@ -208,8 +364,7 @@
     async function enviar(){
       const err = validar();
       if (err) return setMsg(err, true);
-
-      setMsg('Enviando...', false);
+      setMsg('Enviando…');
 
       const payload = {
         Tienda_Nombre: $('tienda').value.trim(),
@@ -218,16 +373,19 @@
         Apellido:      $('apellido').value.trim(),
         Tipo_Evento:   $('tipoEvento').value,
 
+        // PLAGA
         Tipo_Evento_Plaga: $('tipoEventoPlaga').value.trim(),
         Tipo_Plaga:        $('tipoPlaga').value,
         Sector_Hallazgo:   $('sector').value,
         Comentario_Plaga:  $('comentarioPlaga').value.trim(),
 
+        // AROMA (1 select -> 3 columnas)
         Dosif_inco_Aroma:  ($('aromaCat').value === 'Dosificación incorrecta') ? 'Dosificación incorrecta' : '',
         Equip_malo_Aroma:  ($('aromaCat').value === 'Equipo con Fallas') ? 'Equipo con Fallas' : '',
         Hurto_Equip_Aroma: ($('aromaCat').value === 'Hurto de Equipo') ? 'Hurto de Equipo' : '',
         Comentario_Aroma:  $('comentarioAroma').value.trim(),
 
+        // QUÍMICO (1 select -> 3 columnas)
         Falla_Dil_Quimico:    ($('quimCat').value === 'Falla en dilutor') ? 'Falla en dilutor' : '',
         Otra_Inci_Quimico:    ($('quimCat').value === 'Otra incidencia') ? 'Otra incidencia' : '',
         Problema_Ped_Quimico: ($('quimCat').value === 'Problema en Pedido') ? 'Problema en Pedido' : '',
@@ -242,11 +400,10 @@
         });
         const j = await r.json();
         if (!r.ok || !j.ok) throw new Error(j.error || 'Error al guardar');
-
         setMsg('✅ Registro enviado correctamente.');
         limpiar(false);
       } catch (e) {
-        setMsg('❌ ' + e.message, true);
+        setMsg('❌ ' + (e.message||e), true);
       }
     }
 
@@ -256,8 +413,9 @@
         'tipoEventoPlaga','tipoPlaga','sector','comentarioPlaga',
         'aromaCat','comentarioAroma','quimCat','comentarioQuim'
       ].forEach(id => { const el=$(id); if (el) el.value=''; });
-      onTipoEventoChange();
+      toggle($('blkPlaga'), false); toggle($('blkAroma'), false); toggle($('blkQuimico'), false);
       if (clearMsg) setMsg('');
+      window.scrollTo({top:0, behavior:'smooth'});
     }
   </script>
 </body>
