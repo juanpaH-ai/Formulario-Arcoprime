@@ -5,189 +5,95 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Registro de Incidencias</title>
   <meta name="theme-color" content="#003B70" />
-
   <style>
-    /* Barra superior solo con logos */
-.topbar{
-  position: sticky;          /* siempre visible en scroll */
-  top: 0;
-  z-index: 50;
-  background: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 8px 12px;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-/* Tamaños pensados para teléfono */
-.topbar .logo{
-  height: 36px;              /* logos laterales */
-  width: auto;
-  object-fit: contain;
-}
-.topbar .center{
-  height: 44px;              /* sello al centro, un poco mayor */
-}
-
-/* En pantallas un poco más grandes subimos levemente el tamaño */
-@media (min-width: 480px){
-  .topbar .logo{ height: 42px; }
-  .topbar .center{ height: 56px; }
-}
-
     :root{
-      --primary:#003B70;   /* azul cabecera */
+      --primary:#003B70;   /* cabecera */
       --accent:#4AC66C;    /* botón principal */
-      --muted:#6b7280;     /* grises texto */
       --bg:#f6f7fb;        /* fondo app */
       --card:#ffffff;      /* fondo tarjeta */
+      --muted:#6b7280;
       --radius:16px;
       --shadow:0 10px 22px rgba(0,0,0,.08);
     }
-
-    /* Layout mobile-first tipo app */
     html,body{height:100%}
     body{
       margin:0;
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Poppins", "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
-      background: var(--bg);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Poppins", "Noto Sans";
+      background:var(--bg);
       color:#111827;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
-    .app{
-      min-height:100%;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      padding:clamp(12px,3vw,20px);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
     }
 
-    /* Cabecera estilo ejemplo */
-    .hero{
-      width:100%;
-      max-width:520px;
-      background:var(--primary);
-      color:#fff;
-      border-radius:20px;
-      box-shadow: var(--shadow);
-      padding:20px 16px;
-      text-align:center;
-      position:relative;
-      overflow:hidden;
-    }
-    .hero h1{
-      font-size:clamp(20px,5vw,26px);
-      margin:6px 0 4px;
-      font-weight:800;
-      letter-spacing:.2px;
-    }
-    .hero h2{
-      font-size:clamp(13px,3.5vw,16px);
-      margin:0;
-      font-weight:500;
-      opacity:.95;
-    }
-
-    /* Logos de las 4 esquinas */
-    .corner{
-      position:fixed;
-      width:56px; height:56px;
-      z-index:9;
-      opacity:.95;
-    }
-    .corner img{width:100%; height:100%; object-fit:contain;}
-    .tl{top:8px; left:8px;}
-    .tr{top:8px; right:8px;}
-    .bl{bottom:8px; left:8px;}
-    .br{bottom:8px; right:8px;}
-
-    /* Tarjeta del formulario */
-    .card{
-      width:100%;
-      max-width:520px;
-      background:var(--card);
-      border-radius:var(--radius);
-      box-shadow: var(--shadow);
-      padding:16px;
-      margin:14px 0 100px; /* espacio para FAB */
-    }
-    .section-title{
-      font-size:16px; font-weight:700; margin:8px 2px 12px;
-    }
-
-    /* Campos: una columna en móvil, cómodos al tacto */
-    .field{margin-bottom:12px;}
-    label{display:block; font-size:13px; font-weight:600; color:#111827; margin:0 0 6px 2px;}
-    input[type="text"], input[type="date"], select, textarea{
-      width:100%;
-      padding:14px 12px;
-      border:1px solid #e5e7eb;
-      border-radius:12px;
+    /* Barra superior con 3 logos (JPG) */
+    .topbar{
+      position:sticky; top:0; z-index:50;
       background:#fff;
-      font-size:15px;
-      outline:none;
-      box-sizing:border-box;
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      padding:8px 12px; border-bottom:1px solid #e5e7eb;
     }
-    textarea{min-height:96px; resize:vertical;}
-    .invalid{border-color:#ef4444; background:#fff5f5;}
-    .hint{font-size:12px; color:var(--muted); margin:6px 2px 0}
+    .topbar .logo{ height:36px; width:auto; object-fit:contain; }
+    .topbar .center{ height:44px; }
+    @media (min-width:480px){ .topbar .logo{height:42px} .topbar .center{height:56px} }
 
-    /* Mensajes */
-    #msg{margin-top:10px; font-weight:600; text-align:center}
-    #msg.success{color:#16a34a}
-    #msg.error{color:#dc2626}
+    .app{ min-height:100%; display:flex; flex-direction:column; align-items:center; padding:clamp(12px,3vw,20px); }
 
-    /* Botón flotante (estilo acción principal móvil) */
+    .hero{
+      width:100%; max-width:520px;
+      background:var(--primary); color:#fff;
+      border-radius:20px; box-shadow:var(--shadow);
+      padding:18px 16px; text-align:center; margin-top:12px;
+    }
+    .hero h1{ font-size:clamp(18px,5vw,24px); margin:0 0 4px; font-weight:800; }
+    .hero h2{ font-size:clamp(12px,3.5vw,15px); margin:0; font-weight:500; opacity:.95; }
+
+    .card{
+      width:100%; max-width:520px;
+      background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow);
+      padding:16px; margin:14px 0 100px;
+    }
+    .section-title{ font-size:16px; font-weight:700; margin:8px 2px 12px; }
+
+    .field{ margin-bottom:12px; }
+    label{ display:block; font-size:13px; font-weight:600; color:#111827; margin:0 0 6px 2px; }
+    input[type="text"], input[type="date"], select, textarea{
+      width:100%; padding:14px 12px; border:1px solid #e5e7eb; border-radius:12px;
+      background:#fff; font-size:15px; outline:none; box-sizing:border-box;
+    }
+    textarea{ min-height:96px; resize:vertical; }
+    .invalid{ border-color:#ef4444; background:#fff5f5; }
+    .hidden{ display:none; }
+    .hint{ font-size:12px; color:var(--muted); margin:6px 2px 0; }
+
+    #msg{ margin-top:10px; font-weight:600; text-align:center }
+    #msg.success{ color:#16a34a }  #msg.error{ color:#dc2626 }
+
     .fab{
-      position:fixed;
-      bottom:18px;
-      left:50%;
-      transform:translateX(-50%);
-      width:min(520px, calc(100% - 24px));
-      display:flex; gap:8px;
+      position:fixed; bottom:18px; left:50%; transform:translateX(-50%);
+      width:min(520px, calc(100% - 24px)); display:flex; gap:8px;
     }
-    .btn{
-      appearance:none; border:0; border-radius:14px; padding:14px 16px;
-      font-weight:800; letter-spacing:.2px; cursor:pointer; flex:1;
-    }
-    .btn-primary{background:var(--accent); color:#fff; box-shadow:0 10px 18px rgba(74,198,108,.35);}
-    .btn-ghost{background:#e5e7eb; color:#111827;}
-
-    /* Dots de paso (decorativo como en el ejemplo) */
-    .dots{display:flex; justify-content:center; gap:6px; margin-top:10px}
-    .dot{width:8px;height:8px;border-radius:50%; background:rgba(255,255,255,.5)}
-    .dot.active{background:#fff}
-
-    /* Desktop: estrechamos columnas para no romper el “look móvil centrado” */
-    @media (min-width:720px){
-      .app{padding:28px}
-    }
+    .btn{ appearance:none; border:0; border-radius:14px; padding:14px 16px; font-weight:800; letter-spacing:.2px; cursor:pointer; flex:1; }
+    .btn-primary{ background:var(--accent); color:#fff; box-shadow:0 10px 18px rgba(74,198,108,.35); }
+    .btn-ghost{ background:#e5e7eb; color:#111827; }
   </style>
 </head>
 <body>
-  
-<!-- BARRA SUPERIOR DE LOGOS -->
-<div class="topbar" role="banner">
-  <img src="/logos/arcoprime.png" alt="Arcoprime" class="logo left">
-  <img src="/logos/comida-segura.png" alt="Comida Segura — Calidad Arcoprime" class="logo center">
-  <img src="/logos/copec.png" alt="Copec" class="logo right">
-</div>
+  <!-- BARRA SUPERIOR DE LOGOS (JPG) -->
+  <div class="topbar" role="banner">
+    <img src="/logos/arcoprime.jpg" alt="Arcoprime" class="logo left">
+    <img src="/logos/comida-segura.jpg" alt="Comida Segura — Calidad Arcoprime" class="logo center">
+    <img src="/logos/copec.jpg" alt="Copec" class="logo right">
+  </div>
 
   <div class="app">
-    <!-- CABECERA -->
-    <header class="hero" role="banner">
-      <h1>Check-in Comida Segura</h1>
-      <h2>Calidad Arcoprime</h2>
-      <div class="dots" aria-hidden="true">
-        <span class="dot active"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
-      </div>
+    <!-- TÍTULO -->
+    <header class="hero">
+      <h1>Formulario de Registro de Eventos</h1>
+      <h2>Comida Segura - Calidad Arcoprime</h2>
     </header>
 
-    <!-- FORM CARD -->
-    <main class="card" role="main">
+    <!-- FORM -->
+    <main class="card">
       <div class="section-title">Datos Generales</div>
 
       <div class="field">
@@ -266,10 +172,10 @@
       </section>
 
       <p id="msg" role="status" aria-live="polite"></p>
-      <p class="hint">Consejo: utiliza el autocompletar para seleccionar la tienda exacta.</p>
+      <p class="hint">Tip: usa el autocompletar para seleccionar la tienda exacta.</p>
     </main>
 
-    <!-- BOTONES FLOTANTES -->
+    <!-- ACCIONES -->
     <div class="fab" role="group" aria-label="Acciones">
       <button class="btn btn-ghost" type="button" id="btnLimpiar">Limpiar</button>
       <button class="btn btn-primary" type="button" id="btnEnviar">Enviar</button>
@@ -279,14 +185,12 @@
   <script>
     let TIENDAS = [];
     const $ = id => document.getElementById(id);
-
-    // utilidades UI
-    function toggle(el, show){ el.classList.toggle('hidden', !show); }
+    const show = (el, on)=> el.classList.toggle('hidden', !on);
     function setInvalid(id, inv){ const el = $(id); if (el) el.classList.toggle('invalid', !!inv); }
     function setMsg(t, isErr=false){ const m = $('msg'); m.textContent = t; m.className = isErr? 'error' : 'success'; }
 
-    // init
     init();
+
     async function init() {
       try {
         const r = await fetch('/api/init', { method:'GET' });
@@ -314,17 +218,20 @@
         setMsg('❌ Error cargando catálogos: ' + (e.message||e), true);
       }
 
-      $('tipoEvento').addEventListener('change', () => {
-        const t = $('tipoEvento').value;
-        toggle($('blkPlaga'),   t === 'Plaga');
-        toggle($('blkAroma'),   t === 'Aroma');
-        toggle($('blkQuimico'), t === 'Químico');
-      });
+      $('tipoEvento').addEventListener('change', onTipoEventoChange);
       $('btnEnviar').addEventListener('click', enviar);
       $('btnLimpiar').addEventListener('click', () => limpiar(true));
+      onTipoEventoChange(); // oculta todo al inicio
     }
 
-    // validación mínima
+    function onTipoEventoChange(){
+      const v = ($('tipoEvento').value || '').trim().toLowerCase();
+      const isQuim = v === 'químico' || v === 'quimico';
+      show($('blkPlaga'),   v === 'plaga');
+      show($('blkAroma'),   v === 'aroma');
+      show($('blkQuimico'), isQuim);
+    }
+
     function validar(){
       ['tienda','fecha','nombre','apellido','tipoEvento','tipoPlaga','tipoEventoPlaga','sector','comentarioPlaga','aromaCat','comentarioAroma','quimCat','comentarioQuim']
         .forEach(id => setInvalid(id, false));
@@ -354,7 +261,7 @@
         if (!$('aromaCat').value){ errors.push('Selecciona la categoría de Aroma.'); setInvalid('aromaCat', true); }
         if (!$('comentarioAroma').value.trim()){ errors.push('Ingresa un comentario (Aroma).'); setInvalid('comentarioAroma', true); }
       }
-      if (tipo === 'Químico') {
+      if (tipo === 'Químico' || tipo === 'Quimico') {
         if (!$('quimCat').value){ errors.push('Selecciona la categoría de Químico.'); setInvalid('quimCat', true); }
         if (!$('comentarioQuim').value.trim()){ errors.push('Ingresa un comentario (Químico).'); setInvalid('comentarioQuim', true); }
       }
@@ -413,7 +320,7 @@
         'tipoEventoPlaga','tipoPlaga','sector','comentarioPlaga',
         'aromaCat','comentarioAroma','quimCat','comentarioQuim'
       ].forEach(id => { const el=$(id); if (el) el.value=''; });
-      toggle($('blkPlaga'), false); toggle($('blkAroma'), false); toggle($('blkQuimico'), false);
+      show($('blkPlaga'), false); show($('blkAroma'), false); show($('blkQuimico'), false);
       if (clearMsg) setMsg('');
       window.scrollTo({top:0, behavior:'smooth'});
     }
