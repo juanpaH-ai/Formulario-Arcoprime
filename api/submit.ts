@@ -1,4 +1,4 @@
-import { Env, corsHeaders, getAccessToken, json, normalize, ok } from "./_google";
+import { readEnv, corsHeaders, getAccessToken, json, normalize } from "./_google";
 export const config = { runtime: "edge" };
 
 const RESP_HEADERS = [
@@ -22,26 +22,27 @@ const HDR_QUIM = [
   'Falla_Dil_Quimico','Otra_Inci_Quimico','Problema_Ped_Quimico','Comentario_Quimicos'
 ];
 
-export default async function handler(req: Request, env: Env) {
+export default async function handler(req: Request) {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(req) });
   if (req.method !== "POST") return json({ ok: false, error: "Método no permitido" }, 405, req);
 
   try {
     const body = await req.json();
-
     const oblig = ["Tienda_Nombre","Fecha_Evento","Nombre","Apellido","Tipo_Evento"];
     for (const k of oblig) if (!String(body[k]||"").trim()) return json({ ok:false, error:`Falta ${k}` }, 400, req);
 
+    const env = readEnv();
     const token = await getAccessToken(env);
     const id = env.GOOGLE_SHEETS_ID;
     const SHEET_TND  = env.SHEET_TND  || "Tiendas";
     const SHEET_RESP = env.SHEET_RESP || "Respuestas";
 
+    // Buscar Tienda_ID
     const tiendasRes = await fetch(
       `https://sheets.googleapis.com/v4/spreadsheets/${id}/values/${encodeURIComponent(`${SHEET_TND}!A2:B`)}`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
-    ok(tiendasRes);
+    if (!tiendasRes.ok) throw new Error(`Tiendas error: ${await tiendasRes.text()}`);
     const tiendasJson = await tiendasRes.json();
     const target = normalize(body.Tienda_Nombre);
     let tiendaId = ""; let matches = 0;
@@ -104,8 +105,5 @@ async function appendValues(token: string, sheetId: string, range: string, value
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: JSON.stringify({ values })
   });
-  if (!r.ok) {
-    const t = await r.text();
-    throw new Error(`Sheets append error: ${t}`);
-  }
+  if (!r.ok) throw new Error(`Sheets append error: ${await r.text()}`);
 }
