@@ -1,32 +1,34 @@
-import { readEnv, corsHeaders, getAccessToken, json, ok } from "./_google";
+import { readEnv, corsHeaders, getAccessToken, json, ok, resolveSheetId } from "./_google";
+
 export const config = { runtime: "edge" };
 
 export default async function handler(req: Request) {
-  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(req) });
-  if (req.method !== "GET") return json({ ok: false, error: "Método no permitido" }, 405, req);
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: corsHeaders(req) });
+  }
+  if (req.method !== "GET") {
+    return json({ ok: false, error: "Método no permitido" }, 405, req);
+  }
 
   try {
     const env = readEnv();
     const token = await getAccessToken(env);
     const SHEET_TND = env.SHEET_TND || "Tiendas";
     const SHEET_CAT = env.SHEET_CAT || "Catalogos";
-   import { resolveSheetId } from "./_google";
     const id = resolveSheetId(env.GOOGLE_SHEETS_ID);
 
-
+    // Tiendas A2:B
     const tiendasRes = await fetch(
       `https://sheets.googleapis.com/v4/spreadsheets/${id}/values/${encodeURIComponent(`${SHEET_TND}!A2:B`)}`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
-    if (!tiendasRes.ok) {
-      const txt = await tiendasRes.text();
-      throw new Error(`Tiendas error: ${txt}`);
-    }
+    if (!tiendasRes.ok) throw new Error(`Tiendas error: ${await tiendasRes.text()}`);
     const tiendasJson = await tiendasRes.json();
     const tiendas = (tiendasJson.values || [])
       .map((r: string[]) => ({ id: String(r[0] || ""), nombre: String(r[1] || "") }))
       .filter((t: any) => t.id && t.nombre);
 
+    // Helper para columnas sueltas
     async function col(range: string) {
       const r = await fetch(
         `https://sheets.googleapis.com/v4/spreadsheets/${id}/values/${encodeURIComponent(range)}`,
@@ -44,7 +46,11 @@ export default async function handler(req: Request) {
     const catAroma        = await col(`${SHEET_CAT}!I2:I`);
     const catQuimico      = await col(`${SHEET_CAT}!K2:K`);
 
-    return json({ ok: true, tiendas, tipoEvento, tipoEventoPlaga, tipoPlaga, sectores, catAroma, catQuimico }, 200, req);
+    return json(
+      { ok: true, tiendas, tipoEvento, tipoEventoPlaga, tipoPlaga, sectores, catAroma, catQuimico },
+      200,
+      req
+    );
   } catch (e: any) {
     return json({ ok: false, error: e?.message || "Error interno" }, 500, req);
   }
