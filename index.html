@@ -1,0 +1,264 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Registro de Incidencias</title>
+  <style>
+    body { font-family:Poppins, Arial, sans-serif; background:#f9f9f9; max-width:900px; margin:24px auto; padding:20px; color:#222; }
+    header { background:#003B70; color:#fff; padding:20px; text-align:center; }
+    .card { background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.1); padding:20px; margin-bottom:16px; }
+    .row { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:12px; }
+    label { font-weight:600; display:block; margin-bottom:6px; }
+    input[type="text"], input[type="date"], select, textarea { width:100%; padding:10px; border:1px solid #ccc; border-radius:8px; box-sizing:border-box; }
+    textarea { min-height:80px; }
+    .hidden { display:none; }
+    .actions { display:flex; justify-content:flex-end; gap:12px; margin-top:10px; }
+    button { padding:10px 18px; border:0; border-radius:8px; cursor:pointer; font-weight:600; }
+    .primary { background:#4AC66C; color:#fff; } .ghost { background:#e0e0e0; }
+    .invalid { border-color:#d93025 !important; background:#feecec !important; }
+    #msg.success{ color:#4AC66C } #msg.error{ color:red }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Formulario de Registro de Eventos</h1>
+    <h2>Comida Segura - Calidad Arcoprime</h2>
+  </header>
+
+  <div class="card">
+    <h3>Datos Generales</h3>
+    <div class="row">
+      <div>
+        <label for="tienda">Tienda</label>
+        <input list="tiendaList" id="tienda" placeholder="Escribe el nombre del local" autocomplete="off" required>
+        <datalist id="tiendaList"></datalist>
+      </div>
+      <div>
+        <label for="fecha">Fecha del evento</label>
+        <input type="date" id="fecha" required>
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label for="nombre">Nombre y Apellido *</label>
+        <input type="text" id="nombre" placeholder="Tu nombre completo" required>
+      </div>
+      <div>
+        <label for="apellido">Cargo *</label>
+        <input type="text" id="apellido" placeholder="Cargo" required>
+      </div>
+    </div>
+    <div>
+      <label for="tipoEvento">Tipo de Evento</label>
+      <select id="tipoEvento" required>
+        <option value="">Selecciona...</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="blkPlaga" class="card hidden">
+    <h3>Detalle - Plaga</h3>
+    <div class="row">
+      <div>
+        <label for="tipoPlaga">Tipo de Plaga</label>
+        <select id="tipoPlaga" required></select>
+      </div>
+      <div>
+        <label for="tipoEventoPlaga">Tipo de Evento Plaga</label>
+        <select id="tipoEventoPlaga" required></select>
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label for="sector">Sector del Hallazgo</label>
+        <select id="sector" required></select>
+      </div>
+      <div>
+        <label for="comentarioPlaga">Comentario</label>
+        <textarea id="comentarioPlaga" required></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div id="blkAroma" class="card hidden">
+    <h3>Detalle - Aroma</h3>
+    <div class="row">
+      <div>
+        <label for="aromaCat">Categoría</label>
+        <select id="aromaCat" required></select>
+      </div>
+      <div>
+        <label for="comentarioAroma">Comentario</label>
+        <textarea id="comentarioAroma" required></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div id="blkQuimico" class="card hidden">
+    <h3>Detalle - Químico</h3>
+    <div class="row">
+      <div>
+        <label for="quimCat">Categoría</label>
+        <select id="quimCat" required></select>
+      </div>
+      <div>
+        <label for="comentarioQuim">Comentario</label>
+        <textarea id="comentarioQuim" required></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="ghost" type="button" id="btnLimpiar">Limpiar</button>
+    <button class="primary" type="button" id="btnEnviar">Enviar</button>
+  </div>
+  <p id="msg"></p>
+
+  <script>
+    let TIENDAS = [];
+    const $ = id => document.getElementById(id);
+
+    init();
+
+    async function init() {
+      try {
+        const r = await fetch('/api/init', { method:'GET' });
+        const j = await r.json();
+        if (!r.ok || !j.ok) throw new Error(j.error || 'Error init');
+
+        TIENDAS = j.tiendas || [];
+
+        const dl = $('tiendaList'); dl.innerHTML = '';
+        TIENDAS.forEach(t => { const o = document.createElement('option'); o.value = t.nombre; dl.appendChild(o); });
+
+        const te = $('tipoEvento'); te.innerHTML = '<option value="">Selecciona...</option>';
+        (j.tipoEvento || []).forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; te.appendChild(o); });
+
+        const tep = $('tipoEventoPlaga'); tep.innerHTML = '<option value="">Selecciona...</option>';
+        (j.tipoEventoPlaga || []).forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; tep.appendChild(o); });
+
+        const tp = $('tipoPlaga'); tp.innerHTML = '<option value="">Selecciona...</option>';
+        (j.tipoPlaga || []).forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; tp.appendChild(o); });
+
+        const sc = $('sector'); sc.innerHTML = '<option value="">Selecciona...</option>';
+        (j.sectores || []).forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; sc.appendChild(o); });
+
+        const ac = $('aromaCat'); ac.innerHTML = '<option value="">Selecciona...</option>';
+        (j.catAroma || []).forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; ac.appendChild(o); });
+
+        const qc = $('quimCat'); qc.innerHTML = '<option value="">Selecciona...</option>';
+        (j.catQuimico || []).forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; qc.appendChild(o); });
+
+      } catch (e) {
+        setMsg('❌ Error cargando catálogos: ' + e.message, true);
+      }
+
+      $('tipoEvento').addEventListener('change', onTipoEventoChange);
+      $('btnEnviar').addEventListener('click', enviar);
+      $('btnLimpiar').addEventListener('click', () => limpiar(true));
+    }
+
+    function onTipoEventoChange(){
+      const tipo = $('tipoEvento').value;
+      toggle($('blkPlaga'), tipo === 'Plaga');
+      toggle($('blkAroma'), tipo === 'Aroma');
+      toggle($('blkQuimico'), tipo === 'Químico');
+    }
+    function toggle(el, show){ el.classList.toggle('hidden', !show); }
+    function setInvalid(id, inv){ const el = $(id); if (el) el.classList.toggle('invalid', !!inv); }
+    function setMsg(t, isErr=false){ const m = $('msg'); m.textContent = t; m.className = isErr? 'error' : 'success'; }
+
+    function validar(){
+      ['tienda','fecha','nombre','apellido','tipoEvento','tipoPlaga','tipoEventoPlaga','sector','comentarioPlaga','aromaCat','comentarioAroma','quimCat','comentarioQuim']
+        .forEach(id => setInvalid(id, false));
+
+      const errors = [];
+      const tienda = $('tienda').value.trim();
+      const fecha  = $('fecha').value;
+      const nombre = $('nombre').value.trim();
+      const cargo  = $('apellido').value.trim();
+      const tipo   = $('tipoEvento').value;
+
+      if (!tienda){ errors.push('Debes ingresar una Tienda.'); setInvalid('tienda', true); }
+      const existe = TIENDAS.some(t => t.nombre === tienda);
+      if (tienda && !existe){ errors.push('La Tienda no coincide con la base.'); setInvalid('tienda', true); }
+      if (!fecha){ errors.push('Debes seleccionar la Fecha.'); setInvalid('fecha', true); }
+      if (!nombre){ errors.push('Debes ingresar tu Nombre.'); setInvalid('nombre', true); }
+      if (!cargo){ errors.push('Debes ingresar tu Cargo.'); setInvalid('apellido', true); }
+      if (!tipo){ errors.push('Debes seleccionar el Tipo de Evento.'); setInvalid('tipoEvento', true); }
+
+      if (tipo === 'Plaga') {
+        if (!$('tipoPlaga').value){ errors.push('Selecciona el Tipo de Plaga.'); setInvalid('tipoPlaga', true); }
+        if (!$('tipoEventoPlaga').value){ errors.push('Selecciona el Tipo de Evento Plaga.'); setInvalid('tipoEventoPlaga', true); }
+        if (!$('sector').value){ errors.push('Selecciona el Sector del Hallazgo.'); setInvalid('sector', true); }
+        if (!$('comentarioPlaga').value.trim()){ errors.push('Ingresa un comentario (Plaga).'); setInvalid('comentarioPlaga', true); }
+      }
+      if (tipo === 'Aroma') {
+        if (!$('aromaCat').value){ errors.push('Selecciona la categoría de Aroma.'); setInvalid('aromaCat', true); }
+        if (!$('comentarioAroma').value.trim()){ errors.push('Ingresa un comentario (Aroma).'); setInvalid('comentarioAroma', true); }
+      }
+      if (tipo === 'Químico') {
+        if (!$('quimCat').value){ errors.push('Selecciona la categoría de Químico.'); setInvalid('quimCat', true); }
+        if (!$('comentarioQuim').value.trim()){ errors.push('Ingresa un comentario (Químico).'); setInvalid('comentarioQuim', true); }
+      }
+      return errors[0] || '';
+    }
+
+    async function enviar(){
+      const err = validar();
+      if (err) return setMsg(err, true);
+
+      setMsg('Enviando...', false);
+
+      const payload = {
+        Tienda_Nombre: $('tienda').value.trim(),
+        Fecha_Evento:  $('fecha').value,
+        Nombre:        $('nombre').value.trim(),
+        Apellido:      $('apellido').value.trim(),
+        Tipo_Evento:   $('tipoEvento').value,
+
+        Tipo_Evento_Plaga: $('tipoEventoPlaga').value.trim(),
+        Tipo_Plaga:        $('tipoPlaga').value,
+        Sector_Hallazgo:   $('sector').value,
+        Comentario_Plaga:  $('comentarioPlaga').value.trim(),
+
+        Dosif_inco_Aroma:  ($('aromaCat').value === 'Dosificación incorrecta') ? 'Dosificación incorrecta' : '',
+        Equip_malo_Aroma:  ($('aromaCat').value === 'Equipo con Fallas') ? 'Equipo con Fallas' : '',
+        Hurto_Equip_Aroma: ($('aromaCat').value === 'Hurto de Equipo') ? 'Hurto de Equipo' : '',
+        Comentario_Aroma:  $('comentarioAroma').value.trim(),
+
+        Falla_Dil_Quimico:    ($('quimCat').value === 'Falla en dilutor') ? 'Falla en dilutor' : '',
+        Otra_Inci_Quimico:    ($('quimCat').value === 'Otra incidencia') ? 'Otra incidencia' : '',
+        Problema_Ped_Quimico: ($('quimCat').value === 'Problema en Pedido') ? 'Problema en Pedido' : '',
+        Comentario_Quimico:   $('comentarioQuim').value.trim(),
+      };
+
+      try {
+        const r = await fetch('/api/submit', {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const j = await r.json();
+        if (!r.ok || !j.ok) throw new Error(j.error || 'Error al guardar');
+
+        setMsg('✅ Registro enviado correctamente.');
+        limpiar(false);
+      } catch (e) {
+        setMsg('❌ ' + e.message, true);
+      }
+    }
+
+    function limpiar(clearMsg=true){
+      [
+        'tienda','fecha','nombre','apellido','tipoEvento',
+        'tipoEventoPlaga','tipoPlaga','sector','comentarioPlaga',
+        'aromaCat','comentarioAroma','quimCat','comentarioQuim'
+      ].forEach(id => { const el=$(id); if (el) el.value=''; });
+      onTipoEventoChange();
+      if (clearMsg) setMsg('');
+    }
+  </script>
+</body>
+</html>
