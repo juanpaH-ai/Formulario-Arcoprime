@@ -1,4 +1,5 @@
-import { readEnv, corsHeaders, getAccessToken, json, normalize } from "./_google";
+import { readEnv, corsHeaders, getAccessToken, json, normalize, resolveSheetId } from "./_google";
+
 export const config = { runtime: "edge" };
 
 const RESP_HEADERS = [
@@ -23,23 +24,27 @@ const HDR_QUIM = [
 ];
 
 export default async function handler(req: Request) {
-  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(req) });
-  if (req.method !== "POST") return json({ ok: false, error: "Método no permitido" }, 405, req);
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: corsHeaders(req) });
+  }
+  if (req.method !== "POST") {
+    return json({ ok: false, error: "Método no permitido" }, 405, req);
+  }
 
   try {
     const body = await req.json();
     const oblig = ["Tienda_Nombre","Fecha_Evento","Nombre","Apellido","Tipo_Evento"];
-    for (const k of oblig) if (!String(body[k]||"").trim()) return json({ ok:false, error:`Falta ${k}` }, 400, req);
+    for (const k of oblig) {
+      if (!String(body[k]||"").trim()) return json({ ok:false, error:`Falta ${k}` }, 400, req);
+    }
 
     const env = readEnv();
     const token = await getAccessToken(env);
-    import { resolveSheetId } from "./_google";
     const id = resolveSheetId(env.GOOGLE_SHEETS_ID);
-
     const SHEET_TND  = env.SHEET_TND  || "Tiendas";
     const SHEET_RESP = env.SHEET_RESP || "Respuestas";
 
-    // Buscar Tienda_ID
+    // Buscar Tienda_ID por nombre
     const tiendasRes = await fetch(
       `https://sheets.googleapis.com/v4/spreadsheets/${id}/values/${encodeURIComponent(`${SHEET_TND}!A2:B`)}`,
       { headers: { Authorization: `Bearer ${token}` } }
@@ -68,14 +73,17 @@ export default async function handler(req: Request) {
       Nombre: body.Nombre || '',
       Apellido: body.Apellido || '',
       Tipo_Evento: body.Tipo_Evento || '',
+      // PLAGA
       Tipo_Evento_Plaga: body.Tipo_Evento_Plaga || '',
       Tipo_Plaga: body.Tipo_Plaga || '',
       Sector_Hallazgo: body.Sector_Hallazgo || '',
       Comentario_Plaga: body.Comentario_Plaga || '',
+      // AROMA
       Dosif_inco_Aroma: body.Dosif_inco_Aroma || '',
       Equip_malo_Aroma: body.Equip_malo_Aroma || '',
       Hurto_Equip_Aroma: body.Hurto_Equip_Aroma || '',
       Comentario_Aroma: body.Comentario_Aroma || '',
+      // QUÍMICO
       Falla_Dil_Quimico: body.Falla_Dil_Quimico || '',
       Otra_Inci_Quimico: body.Otra_Inci_Quimico || '',
       Problema_Ped_Quimico: body.Problema_Ped_Quimico || '',
@@ -109,3 +117,4 @@ async function appendValues(token: string, sheetId: string, range: string, value
   });
   if (!r.ok) throw new Error(`Sheets append error: ${await r.text()}`);
 }
+
