@@ -2,14 +2,31 @@ export type Env = {
   GOOGLE_SERVICE_ACCOUNT_EMAIL: string;
   GOOGLE_SERVICE_ACCOUNT_KEY: string; // PEM (private_key del JSON)
   GOOGLE_SHEETS_ID: string;
-
   SHEET_RESP?: string;
   SHEET_TND?: string;
   SHEET_CAT?: string;
-
   TELEGRAM_BOT_TOKEN?: string;
   TELEGRAM_CHAT_IDS?: string; // separados por coma
 };
+
+// ✅ NUEVO: leer variables desde process.env (Edge las expone así en Vercel)
+export function readEnv(): Env {
+  const e = (process as any).env || {};
+  const req = ["GOOGLE_SERVICE_ACCOUNT_EMAIL", "GOOGLE_SERVICE_ACCOUNT_KEY", "GOOGLE_SHEETS_ID"];
+  for (const k of req) {
+    if (!e[k]) throw new Error(`Falta variable de entorno: ${k}`);
+  }
+  return {
+    GOOGLE_SERVICE_ACCOUNT_EMAIL: String(e.GOOGLE_SERVICE_ACCOUNT_EMAIL),
+    GOOGLE_SERVICE_ACCOUNT_KEY: String(e.GOOGLE_SERVICE_ACCOUNT_KEY),
+    GOOGLE_SHEETS_ID: String(e.GOOGLE_SHEETS_ID),
+    SHEET_RESP: e.SHEET_RESP,
+    SHEET_TND: e.SHEET_TND,
+    SHEET_CAT: e.SHEET_CAT,
+    TELEGRAM_BOT_TOKEN: e.TELEGRAM_BOT_TOKEN,
+    TELEGRAM_CHAT_IDS: e.TELEGRAM_CHAT_IDS,
+  };
+}
 
 export function corsHeaders(req: Request) {
   const origin = req.headers.get("origin") || "*";
