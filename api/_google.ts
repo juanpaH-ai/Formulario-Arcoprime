@@ -56,7 +56,10 @@ export async function getAccessToken(env: Env): Promise<string> {
     iat: now,
   }));
   const unsigned = `${header}.${claimSet}`;
-  const signature = await signRS256(unsigned, env.GOOGLE_SERVICE_ACCOUNT_KEY);
+
+  // ⬇️ normalizamos aquí
+  const normalizedPem = normalizePem(env.GOOGLE_SERVICE_ACCOUNT_KEY);
+  const signature = await signRS256(unsigned, normalizedPem);
   const jwt = `${unsigned}.${signature}`;
 
   const res = await fetch("https://oauth2.googleapis.com/token", {
@@ -71,6 +74,7 @@ export async function getAccessToken(env: Env): Promise<string> {
   if (!res.ok) throw new Error(out.error || JSON.stringify(out));
   return out.access_token;
 }
+
 
 function base64url(input: string | ArrayBuffer) {
   let str =
@@ -119,4 +123,33 @@ export function normalize(s: string) {
 
 export function ok(res: Response) {
   if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+}
+function normalizePem(pemRaw: string): string {
+  if (!pemRaw) throw new Error('GOOGLE_SERVICE_ACCOUNT_KEY vacío');
+
+  let pem = pemRaw.trim();
+
+  // Caso 1: pegaron el JSON completo del SA
+  if (pem.startsWith('{')) {
+    try {
+      const obj = JSON.parse(pem);
+      if (obj.private_key) pem = String(obj.private_key);
+    } catch {}
+  }
+
+  // Caso 2: viene con "\n" literales -> convertir a saltos reales
+  if (pem.includes('\\n')) {
+    pem = pem.replace(/\\n/g, '\n');
+  }
+
+  // Quitar comillas envolventes si quedaron
+  if ((pem.startsWith('"') && pem.endsWith('"')) || (pem.startsWith("'") && pem.endsWith("'"))) {
+    pem = pem.slice(1, -1);
+  }
+
+  // Validación rápida
+  if (!pem.includes('BEGIN PRIVATE KEY') || !pem.includes('END PRIVATE KEY')) {
+    throw new Error('GOOGLE_SERVICE_ACCOUNT_KEY no parece un PEM válido (falta BEGIN/END). Revisa la variable de entorno.');
+  }
+  return pem;
 }
