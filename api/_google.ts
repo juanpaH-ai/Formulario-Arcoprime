@@ -161,3 +161,8 @@ function normalizePem(pemRaw: string): string {
   }
   return pem;
 }
+export function resolveSheetId(v: string) {
+  const s = (v || '').trim();
+  const m = s.match(/\/d\/([a-zA-Z0-9-_]+)/);
+  return m ? m[1] : s;
+}
