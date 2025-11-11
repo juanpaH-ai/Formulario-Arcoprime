@@ -10,7 +10,9 @@ export default async function handler(req: Request) {
     const token = await getAccessToken(env);
     const SHEET_TND = env.SHEET_TND || "Tiendas";
     const SHEET_CAT = env.SHEET_CAT || "Catalogos";
-    const id = env.GOOGLE_SHEETS_ID;
+   import { resolveSheetId } from "./_google";
+    const id = resolveSheetId(env.GOOGLE_SHEETS_ID);
+
 
     const tiendasRes = await fetch(
       `https://sheets.googleapis.com/v4/spreadsheets/${id}/values/${encodeURIComponent(`${SHEET_TND}!A2:B`)}`,
