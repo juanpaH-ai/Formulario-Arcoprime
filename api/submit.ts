@@ -23,7 +23,7 @@ const HDR_QUIM = [
   'Falla_Dil_Quimico','Otra_Inci_Quimico','Problema_Ped_Quimico','Comentario_Quimicos'
 ];
 
-/* ============ TELEGRAM HELPERS ============ */
+/* ============ TELEGRAM HELPERS (con enrutado por tipo) ============ */
 function csvToList(csv?: string): string[] {
   return String(csv || "")
     .split(",")
@@ -55,10 +55,19 @@ function buildTelegramMessage(row: Record<string, any>): string {
   return `🚨 Registro de Evento - QUÍMICO\n\n${base}\n\n⚠️ Causa: ${causaQ}\n📝 Comentario: ${row.Comentario_Quimicos}`;
 }
 
+function chatIdsForType(tipoRaw?: string): string[] {
+  const env = (globalThis as any).process?.env || {};
+  const tipo = String(tipoRaw || '').toLowerCase();
+  if (tipo === 'plaga')   return csvToList(env.TELEGRAM_CHAT_IDS_PLAGA);
+  if (tipo === 'aroma')   return csvToList(env.TELEGRAM_CHAT_IDS_AROMA);
+  if (tipo === 'químico' || tipo === 'quimico') return csvToList(env.TELEGRAM_CHAT_IDS_QUIMICO);
+  return csvToList(env.TELEGRAM_CHAT_IDS_DEFAULT); // opcional (fallback)
+}
+
 async function notifyTelegram(row: Record<string, any>) {
   const env = (globalThis as any).process?.env || {};
   const token = env.TELEGRAM_BOT_TOKEN;
-  const chats = csvToList(env.TELEGRAM_CHAT_IDS);
+  const chats = chatIdsForType(row.Tipo_Evento);
   if (!token || !chats.length) return;
 
   const url  = `https://api.telegram.org/bot${token}/sendMessage`;
@@ -74,7 +83,7 @@ async function notifyTelegram(row: Record<string, any>) {
     )
   );
 }
-/* ========== FIN TELEGRAM HELPERS ========== */
+/* =================== FIN TELEGRAM HELPERS =================== */
 
 export default async function handler(req: Request) {
   if (req.method === "OPTIONS") {
