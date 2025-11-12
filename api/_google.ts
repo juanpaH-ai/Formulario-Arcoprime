@@ -11,20 +11,27 @@ export type Env = {
 
 // ✅ NUEVO: leer variables desde process.env (Edge las expone así en Vercel)
 export function readEnv(): Env {
-  const e = (process as any).env || {};
-  const req = ["GOOGLE_SERVICE_ACCOUNT_EMAIL", "GOOGLE_SERVICE_ACCOUNT_KEY", "GOOGLE_SHEETS_ID"];
+  // ✅ Compatible con Edge y Node sin @types/node
+  const gv = (globalThis as any);
+  const e: Record<string, string | undefined> =
+    (gv.process && gv.process.env) ? gv.process.env : {};
+
+  const req = ["GOOGLE_SERVICE_ACCOUNT_EMAIL", "GOOGLE_SERVICE_ACCOUNT_KEY", "GOOGLE_SHEETS_ID"] as const;
   for (const k of req) {
-    if (!e[k]) throw new Error(`Falta variable de entorno: ${k}`);
+    if (!e[k]) {
+      throw new Error(`Falta variable de entorno: ${k}`);
+    }
   }
+
   return {
     GOOGLE_SERVICE_ACCOUNT_EMAIL: String(e.GOOGLE_SERVICE_ACCOUNT_EMAIL),
-    GOOGLE_SERVICE_ACCOUNT_KEY: String(e.GOOGLE_SERVICE_ACCOUNT_KEY),
-    GOOGLE_SHEETS_ID: String(e.GOOGLE_SHEETS_ID),
+    GOOGLE_SERVICE_ACCOUNT_KEY:   String(e.GOOGLE_SERVICE_ACCOUNT_KEY),
+    GOOGLE_SHEETS_ID:             String(e.GOOGLE_SHEETS_ID),
     SHEET_RESP: e.SHEET_RESP,
-    SHEET_TND: e.SHEET_TND,
-    SHEET_CAT: e.SHEET_CAT,
+    SHEET_TND:  e.SHEET_TND,
+    SHEET_CAT:  e.SHEET_CAT,
     TELEGRAM_BOT_TOKEN: e.TELEGRAM_BOT_TOKEN,
-    TELEGRAM_CHAT_IDS: e.TELEGRAM_CHAT_IDS,
+    TELEGRAM_CHAT_IDS:  e.TELEGRAM_CHAT_IDS,
   };
 }
 
