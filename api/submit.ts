@@ -55,13 +55,13 @@ function buildTelegramMessage(row: Record<string, any>): string {
   return `🚨 Registro de Evento - QUÍMICO\n\n${base}\n\n⚠️ Causa: ${causaQ}\n📝 Comentario: ${row.Comentario_Quimicos}`;
 }
 
-async function notifyTelegram(_env: any, row: Record<string, any>) {
+async function notifyTelegram(row: Record<string, any>) {
   const env = (globalThis as any).process?.env || {};
   const token = env.TELEGRAM_BOT_TOKEN;
   const chats = csvToList(env.TELEGRAM_CHAT_IDS);
   if (!token || !chats.length) return;
 
-  const url = `https://api.telegram.org/bot${token}/sendMessage`;
+  const url  = `https://api.telegram.org/bot${token}/sendMessage`;
   const text = buildTelegramMessage(row);
 
   await Promise.allSettled(
@@ -72,11 +72,9 @@ async function notifyTelegram(_env: any, row: Record<string, any>) {
         body: JSON.stringify({ chat_id, text, parse_mode: "HTML" })
       })
     )
-    notifyTelegram(env, rowObj)
   );
 }
 /* ========== FIN TELEGRAM HELPERS ========== */
-
 
 export default async function handler(req: Request) {
   if (req.method === "OPTIONS") {
@@ -146,6 +144,7 @@ export default async function handler(req: Request) {
       Submitter_IP: ''
     };
 
+    // Guardar en Sheets
     await appendValues(token, id, `${SHEET_RESP}!A:U`, [[...RESP_HEADERS.map(h => rowObj[h])]]);
 
     const tipo = String(body.Tipo_Evento || '');
@@ -157,8 +156,12 @@ export default async function handler(req: Request) {
       await appendValues(token, id, `Respuestas_Quimico!A:J`, [[...HDR_QUIM.map(h => rowObj[h])]]);
     }
 
-    
-    
+    // ===== Enviar notificación por Telegram (no bloquea si falla) =====
+    await Promise.allSettled([
+      notifyTelegram(rowObj)
+      // , notifyEmail(rowObj) // si más adelante activas email
+    ]);
+
     return json({ ok: true, Response_ID: responseId, Tienda_ID: tiendaId, warn }, 200, req);
   } catch (e: any) {
     return json({ ok: false, error: e?.message || "Error interno" }, 500, req);
