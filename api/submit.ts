@@ -23,6 +23,61 @@ const HDR_QUIM = [
   'Falla_Dil_Quimico','Otra_Inci_Quimico','Problema_Ped_Quimico','Comentario_Quimicos'
 ];
 
+/* ============ TELEGRAM HELPERS ============ */
+function csvToList(csv?: string): string[] {
+  return String(csv || "")
+    .split(",")
+    .map(s => s.trim())
+    .filter(Boolean);
+}
+
+function buildTelegramMessage(row: Record<string, any>): string {
+  const base =
+`🏪 Tienda: ${row.Tienda_Nombre}
+📅 Fecha: ${row.Fecha_Evento}
+🧑 Reporta: ${row.Nombre} ${row.Apellido}`.trim();
+
+  const t = String(row.Tipo_Evento || '');
+  if (t === 'Plaga') {
+    return `🚨 Registro de Evento - PLAGA\n\n${base}\n\n🌿 Tipo de Plaga: ${row.Tipo_Plaga}\n📍 Sector: ${row.Sector_Hallazgo}\n📝 Comentario: ${row.Comentario_Plaga}\n📌 Tipo de Evento: ${row.Tipo_Evento_Plaga}`;
+  }
+  if (t === 'Aroma') {
+    const causa = row.Dosif_inco_Aroma ? 'Dosificación incorrecta'
+                : row.Equip_malo_Aroma ? 'Equipo con fallas'
+                : row.Hurto_Equip_Aroma ? 'Hurto de equipo'
+                : '—';
+    return `🚨 Registro de Evento - AROMA\n\n${base}\n\n⚠️ Causa: ${causa}\n📝 Comentario: ${row.Comentario_Aroma}`;
+  }
+  const causaQ = row.Falla_Dil_Quimico ? 'Falla en dilutor'
+              : row.Otra_Inci_Quimico ? 'Otra incidencia'
+              : row.Problema_Ped_Quimico ? 'Problema en pedido'
+              : '—';
+  return `🚨 Registro de Evento - QUÍMICO\n\n${base}\n\n⚠️ Causa: ${causaQ}\n📝 Comentario: ${row.Comentario_Quimicos}`;
+}
+
+async function notifyTelegram(_env: any, row: Record<string, any>) {
+  const env = (globalThis as any).process?.env || {};
+  const token = env.TELEGRAM_BOT_TOKEN;
+  const chats = csvToList(env.TELEGRAM_CHAT_IDS);
+  if (!token || !chats.length) return;
+
+  const url = `https://api.telegram.org/bot${token}/sendMessage`;
+  const text = buildTelegramMessage(row);
+
+  await Promise.allSettled(
+    chats.map(chat_id =>
+      fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id, text, parse_mode: "HTML" })
+      })
+    )
+    notifyTelegram(env, rowObj)
+  );
+}
+/* ========== FIN TELEGRAM HELPERS ========== */
+
+
 export default async function handler(req: Request) {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders(req) });
@@ -102,6 +157,8 @@ export default async function handler(req: Request) {
       await appendValues(token, id, `Respuestas_Quimico!A:J`, [[...HDR_QUIM.map(h => rowObj[h])]]);
     }
 
+    
+    
     return json({ ok: true, Response_ID: responseId, Tienda_ID: tiendaId, warn }, 200, req);
   } catch (e: any) {
     return json({ ok: false, error: e?.message || "Error interno" }, 500, req);
