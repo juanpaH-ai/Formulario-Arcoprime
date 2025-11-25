@@ -232,6 +232,7 @@
         });
 
         const tp = byId('tipoPlaga');
+        tp.addEventListener('change', renderTipoEventoPlaga);
         tp.innerHTML = '<option value="">Selecciona...</option>';
         (data.tipoPlaga || []).forEach(v => {
           const opt = document.createElement('option');
@@ -270,43 +271,50 @@
         tp.addEventListener('change', renderTipoEventoPlaga);
       }
 
-      function renderTipoEventoPlaga() {
-        const sel = byId('tipoEventoPlaga');
-        const current = sel.value;
-        const plagaCode = byId('tipoPlaga').value;
+  function renderTipoEventoPlaga() {
+  const sel = byId('tipoEventoPlaga');
+  const current = sel.value;
+  const plagaCode = byId('tipoPlaga').value;  // Valor del tipo de plaga seleccionada (r1, c5, m4, etc.)
 
-        const permitidas = allowedTipoEventoPlagaFor(plagaCode);
+  const permitidas = allowedTipoEventoPlagaFor(plagaCode);  // Filtra las opciones según el tipo de plaga
 
-        sel.innerHTML = '';
-        const opt0 = document.createElement('option');
-        opt0.value = '';
-        opt0.textContent = 'Selecciona...';
-        sel.appendChild(opt0);
+  // Limpiar el select
+  sel.innerHTML = '';
+  const opt0 = document.createElement('option');
+  opt0.value = '';
+  opt0.textContent = 'Selecciona...';
+  sel.appendChild(opt0);
 
-        permitidas.forEach(v => {
-          const o = document.createElement('option');
-          o.value = v;
-          o.textContent = v;
-          sel.appendChild(o);
-        });
+  // Añadir las opciones filtradas
+  permitidas.forEach(v => {
+    const o = document.createElement('option');
+    o.value = v;
+    o.textContent = v;
+    sel.appendChild(o);
+  });
 
-        if (permitidas.includes(current)) {
-          sel.value = current;
-        } else {
-          sel.value = '';
-        }
-      }
+  // Si la selección anterior sigue siendo válida, la dejamos
+  if (permitidas.includes(current)) {
+    sel.value = current;
+  } else {
+    sel.value = '';  // Reseteamos la selección si no es válida
+  }
+}
 
-      function allowedTipoEventoPlagaFor(plagaCodeRaw) {
-        const code = String(plagaCodeRaw || '').trim().toLowerCase();
-        const SOLO_CTC_VL = ['Captura/Trampa/Cadaver', 'Vivo/Libre'];
-        const CTC_VL_NM = ['Captura/Trampa/Cadaver', 'Vivo/Libre', 'Nido/Madriguera'];
 
-        if (code === 'R1') return ALL_TIPO_EVENTO_PLAGA;
-        if (code === 'C5') return CTC_VL_NM;
-        if (['M4', 'H4', 'P1'].includes(code)) return SOLO_CTC_VL;
-        return ALL_TIPO_EVENTO_PLAGA;
-      }
+   function allowedTipoEventoPlagaFor(plagaCodeRaw) {
+  const code = String(plagaCodeRaw || '').trim().toLowerCase();
+
+  // Listas de las opciones según el código de plaga
+  const SOLO_CTC_VL_NM = ['Captura/Trampa/Cadaver', 'Vivo/Libre', 'Nido/Madriguera'];  // Para C5
+  const SOLO_CTC_VL   = ['Captura/Trampa/Cadaver', 'Vivo/Libre'];  // Para M4, H4, P1
+
+  if (code === 'R1') return ALL_TIPO_EVENTO_PLAGA;  // Para R1, mostrar todas las categorías
+  if (code === 'C5') return SOLO_CTC_VL_NM;        // Para C5, solo 3 categorías
+  if (['M4', 'H4', 'P1'].includes(code)) return SOLO_CTC_VL;  // Para M4, H4, P1, solo 2 categorías
+  return ALL_TIPO_EVENTO_PLAGA;  // Para otro valor, mostrar todas las categorías
+}
+
 
       function onTipoEventoChange(){
         const tipo = byId('tipoEvento').value;
