@@ -1,4 +1,4 @@
 # Formulario-Arcoprime
-Formulario de Registro de Eventos Arcoprime.
+Formulario de Registro de Eventos Arcoprime
 
 
