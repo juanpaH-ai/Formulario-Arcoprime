@@ -78,3 +78,4 @@ export default async function handler(req: Request) {
     return json({ ok: false, error: e?.message || "Error interno" }, 500, req);
   }
 }
+
