@@ -5,22 +5,27 @@ export type Env = {
   SHEET_RESP?: string;
   SHEET_TND?: string;
   SHEET_CAT?: string;
+  // ── Telegram por tipo de evento ──
   TELEGRAM_BOT_TOKEN?: string;
-  TELEGRAM_CHAT_IDS?: string; // separados por coma
+  TELEGRAM_CHAT_IDS_PLAGA?: string;    // Chat ID(s) separados por coma
+  TELEGRAM_CHAT_IDS_AROMA?: string;
+  TELEGRAM_CHAT_IDS_QUIMICO?: string;
+  TELEGRAM_CHAT_IDS_DEFAULT?: string;  // Fallback opcional
+  // ── n8n Webhooks por tipo de evento ──
+  N8N_WEBHOOK_PLAGA?: string;          // URL del webhook n8n para Plaga
+  N8N_WEBHOOK_AROMA?: string;          // URL del webhook n8n para Aroma
+  N8N_WEBHOOK_QUIMICO?: string;        // URL del webhook n8n para Químico
 };
 
-// ✅ NUEVO: leer variables desde process.env (Edge las expone así en Vercel)
+// ✅ Leer variables desde process.env (Edge las expone así en Vercel)
 export function readEnv(): Env {
-  // ✅ Compatible con Edge y Node sin @types/node
   const gv = (globalThis as any);
   const e: Record<string, string | undefined> =
     (gv.process && gv.process.env) ? gv.process.env : {};
 
   const req = ["GOOGLE_SERVICE_ACCOUNT_EMAIL", "GOOGLE_SERVICE_ACCOUNT_KEY", "GOOGLE_SHEETS_ID"] as const;
   for (const k of req) {
-    if (!e[k]) {
-      throw new Error(`Falta variable de entorno: ${k}`);
-    }
+    if (!e[k]) throw new Error(`Falta variable de entorno: ${k}`);
   }
 
   return {
@@ -30,8 +35,16 @@ export function readEnv(): Env {
     SHEET_RESP: e.SHEET_RESP,
     SHEET_TND:  e.SHEET_TND,
     SHEET_CAT:  e.SHEET_CAT,
-    TELEGRAM_BOT_TOKEN: e.TELEGRAM_BOT_TOKEN,
-    TELEGRAM_CHAT_IDS:  e.TELEGRAM_CHAT_IDS,
+    // Telegram
+    TELEGRAM_BOT_TOKEN:          e.TELEGRAM_BOT_TOKEN,
+    TELEGRAM_CHAT_IDS_PLAGA:     e.TELEGRAM_CHAT_IDS_PLAGA,
+    TELEGRAM_CHAT_IDS_AROMA:     e.TELEGRAM_CHAT_IDS_AROMA,
+    TELEGRAM_CHAT_IDS_QUIMICO:   e.TELEGRAM_CHAT_IDS_QUIMICO,
+    TELEGRAM_CHAT_IDS_DEFAULT:   e.TELEGRAM_CHAT_IDS_DEFAULT,
+    // n8n
+    N8N_WEBHOOK_PLAGA:   e.N8N_WEBHOOK_PLAGA,
+    N8N_WEBHOOK_AROMA:   e.N8N_WEBHOOK_AROMA,
+    N8N_WEBHOOK_QUIMICO: e.N8N_WEBHOOK_QUIMICO,
   };
 }
 
@@ -54,17 +67,15 @@ export function json(data: any, status: number, req: Request) {
 
 export async function getAccessToken(env: Env): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
-  const header = base64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
+  const header   = base64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
   const claimSet = base64url(JSON.stringify({
-    iss: env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+    iss:   env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
     scope: "https://www.googleapis.com/auth/spreadsheets",
-    aud: "https://oauth2.googleapis.com/token",
-    exp: now + 3600,
-    iat: now,
+    aud:   "https://oauth2.googleapis.com/token",
+    exp:   now + 3600,
+    iat:   now,
   }));
-  const unsigned = `${header}.${claimSet}`;
-
-  // ⬇️ normalizamos aquí
+  const unsigned  = `${header}.${claimSet}`;
   const normalizedPem = normalizePem(env.GOOGLE_SERVICE_ACCOUNT_KEY);
   const signature = await signRS256(unsigned, normalizedPem);
   const jwt = `${unsigned}.${signature}`;
@@ -81,7 +92,6 @@ export async function getAccessToken(env: Env): Promise<string> {
   if (!res.ok) throw new Error(out.error || JSON.stringify(out));
   return out.access_token;
 }
-
 
 function base64url(input: string | ArrayBuffer) {
   let str =
@@ -100,24 +110,18 @@ async function signRS256(unsigned: string, pem: string) {
     false,
     ["sign"]
   );
-  const sig = await crypto.subtle.sign(
-    "RSASSA-PKCS1-v1_5",
-    key,
-    new TextEncoder().encode(unsigned)
-  );
+  const sig = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(unsigned));
   return base64url(sig);
 }
 
 function pemToArrayBuffer(pem: string) {
-  if (!pem.includes('BEGIN PRIVATE KEY')) {
-    throw new Error('PEM inválido: falta BEGIN PRIVATE KEY');
-  }
+  if (!pem.includes('BEGIN PRIVATE KEY')) throw new Error('PEM inválido: falta BEGIN PRIVATE KEY');
   const b64 = pem
     .replace(/-----BEGIN PRIVATE KEY-----/g, "")
     .replace(/-----END PRIVATE KEY-----/g, "")
     .replace(/\s+/g, "");
   try {
-    const raw = atob(b64);
+    const raw   = atob(b64);
     const bytes = new Uint8Array(raw.length);
     for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
     return bytes.buffer;
@@ -125,7 +129,6 @@ function pemToArrayBuffer(pem: string) {
     throw new Error('Base64 inválido en la clave. Revisa saltos de línea o copia/pegado del private_key.');
   }
 }
-
 
 export function normalize(s: string) {
   return (s || "")
@@ -139,35 +142,24 @@ export function normalize(s: string) {
 export function ok(res: Response) {
   if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
 }
+
 function normalizePem(pemRaw: string): string {
   if (!pemRaw) throw new Error('GOOGLE_SERVICE_ACCOUNT_KEY vacío');
-
   let pem = pemRaw.trim();
 
-  // Caso 1: pegaron el JSON completo del SA
   if (pem.startsWith('{')) {
-    try {
-      const obj = JSON.parse(pem);
-      if (obj.private_key) pem = String(obj.private_key);
-    } catch {}
+    try { const obj = JSON.parse(pem); if (obj.private_key) pem = String(obj.private_key); } catch {}
   }
-
-  // Caso 2: viene con "\n" literales -> convertir a saltos reales
-  if (pem.includes('\\n')) {
-    pem = pem.replace(/\\n/g, '\n');
-  }
-
-  // Quitar comillas envolventes si quedaron
+  if (pem.includes('\\n')) pem = pem.replace(/\\n/g, '\n');
   if ((pem.startsWith('"') && pem.endsWith('"')) || (pem.startsWith("'") && pem.endsWith("'"))) {
     pem = pem.slice(1, -1);
   }
-
-  // Validación rápida
   if (!pem.includes('BEGIN PRIVATE KEY') || !pem.includes('END PRIVATE KEY')) {
-    throw new Error('GOOGLE_SERVICE_ACCOUNT_KEY no parece un PEM válido (falta BEGIN/END). Revisa la variable de entorno.');
+    throw new Error('GOOGLE_SERVICE_ACCOUNT_KEY no parece un PEM válido. Revisa la variable de entorno.');
   }
   return pem;
 }
+
 export function resolveSheetId(v: string) {
   const s = (v || '').trim();
   const m = s.match(/\/d\/([a-zA-Z0-9-_]+)/);
