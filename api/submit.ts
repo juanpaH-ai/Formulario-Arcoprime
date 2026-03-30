@@ -254,11 +254,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const bb = Busboy({ headers: req.headers as Record<string, string> });
       bb.on("field", (name, val) => { fields[name] = val; });
       bb.on("file", (name, stream, info) => {
-        const chunks: Buffer[] = [];
-        stream.on("data", (d: Buffer) => chunks.push(d));
+        const chunks: Uint8Array[] = [];
+        stream.on("data", (d: Uint8Array) => chunks.push(d));
         stream.on("end", () => {
           files[name] = {
-            buffer:   Buffer.concat(chunks),
+            buffer:   Buffer.concat(chunks as Buffer[]),
             mimeType: info.mimeType || "image/jpeg",
             fileName: info.filename || `${name}.jpg`,
           };
