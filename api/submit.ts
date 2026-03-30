@@ -1,33 +1,42 @@
-import { readEnv, corsHeaders, getAccessToken, json, normalize, resolveSheetId } from "./_google";
+import {
+  readEnv, corsHeaders, getAccessToken, json, normalize,
+  resolveSheetId, getNextTicket, uploadFileToDrive,
+} from "./_google";
 
 export const config = { runtime: "edge" };
 
-/* ═══════════════════════════════════════════════════════════════
-   CABECERAS DE COLUMNAS
-═══════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════
+   CABECERAS DE COLUMNAS — se agregaron Ticket, Proveedor,
+   Llego_Certificado y Fotos_URLs a todas las hojas
+═══════════════════════════════════════════════════════════ */
 const RESP_HEADERS = [
-  'Response_ID','Timestamp','Tienda_ID','Tienda_Nombre','Fecha_Evento',
-  'Nombre','Apellido','Tipo_Evento',
+  'Ticket','Response_ID','Timestamp','Tienda_ID','Tienda_Nombre','Fecha_Evento',
+  'Nombre','Apellido','Tipo_Evento','Proveedor',
   'Tipo_Evento_Plaga','Tipo_Plaga','Sector_Hallazgo','Comentario_Plaga',
   'Dosif_inco_Aroma','Equip_malo_Aroma','Hurto_Equip_Aroma','Comentario_Aroma',
-  'Falla_Dil_Quimico','Otra_Inci_Quimico','Problema_Ped_Quimico','Comentario_Quimicos','Submitter_IP'
-];
-const HDR_PLAGA = [
-  'Response_ID','Timestamp','Tienda_ID','Tienda_Nombre','Fecha_Evento','Nombre','Apellido',
-  'Tipo_Evento_Plaga','Tipo_Plaga','Sector_Hallazgo','Comentario_Plaga'
-];
-const HDR_AROMA = [
-  'Response_ID','Timestamp','Tienda_ID','Tienda_Nombre','Fecha_Evento','Nombre','Apellido',
-  'Dosif_inco_Aroma','Equip_malo_Aroma','Hurto_Equip_Aroma','Comentario_Aroma'
-];
-const HDR_QUIM = [
-  'Response_ID','Timestamp','Tienda_ID','Tienda_Nombre','Fecha_Evento','Nombre','Apellido',
-  'Falla_Dil_Quimico','Otra_Inci_Quimico','Problema_Ped_Quimico','Comentario_Quimicos'
+  'Falla_Dil_Quimico','Otra_Inci_Quimico','Problema_Ped_Quimico','Comentario_Quimicos',
+  'Llego_Certificado','Fotos_URLs','Submitter_IP',
 ];
 
-/* ═══════════════════════════════════════════════════════════════
+const HDR_PLAGA = [
+  'Ticket','Response_ID','Timestamp','Tienda_ID','Tienda_Nombre','Fecha_Evento',
+  'Nombre','Apellido','Proveedor','Llego_Certificado',
+  'Tipo_Evento_Plaga','Tipo_Plaga','Sector_Hallazgo','Comentario_Plaga','Fotos_URLs',
+];
+const HDR_AROMA = [
+  'Ticket','Response_ID','Timestamp','Tienda_ID','Tienda_Nombre','Fecha_Evento',
+  'Nombre','Apellido','Proveedor',
+  'Dosif_inco_Aroma','Equip_malo_Aroma','Hurto_Equip_Aroma','Comentario_Aroma','Fotos_URLs',
+];
+const HDR_QUIM = [
+  'Ticket','Response_ID','Timestamp','Tienda_ID','Tienda_Nombre','Fecha_Evento',
+  'Nombre','Apellido','Proveedor','Llego_Certificado',
+  'Falla_Dil_Quimico','Otra_Inci_Quimico','Problema_Ped_Quimico','Comentario_Quimicos','Fotos_URLs',
+];
+
+/* ═══════════════════════════════════════════════════════════
    HELPERS GENERALES
-═══════════════════════════════════════════════════════════════ */
+═══════════════════════════════════════════════════════════ */
 function csvToList(csv?: string): string[] {
   return String(csv || "").split(",").map(s => s.trim()).filter(Boolean);
 }
@@ -40,24 +49,28 @@ function tipoNorm(raw?: string): 'plaga' | 'aroma' | 'quimico' | '' {
   return '';
 }
 
-/* ═══════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════
    TELEGRAM
-═══════════════════════════════════════════════════════════════ */
+═══════════════════════════════════════════════════════════ */
 function buildTelegramMessage(row: Record<string, any>): string {
-  const base =
-`🏪 <b>Tienda:</b> ${row.Tienda_Nombre}
-📅 <b>Fecha:</b> ${row.Fecha_Evento}
-🧑 <b>Reporta:</b> ${row.Nombre} ${row.Apellido}`;
-
   const t = tipoNorm(row.Tipo_Evento);
+  const fotos = row.Fotos_URLs ? `\n📷 <b>Fotos:</b> ${row.Fotos_URLs}` : '';
+  const prov  = row.Proveedor  ? `\n🏢 <b>Proveedor:</b> ${row.Proveedor}` : '';
+
+  const base =
+`🎫 <b>Ticket:</b> ${row.Ticket}
+🏪 <b>Tienda:</b> ${row.Tienda_Nombre}
+📅 <b>Fecha:</b> ${row.Fecha_Evento}
+🧑 <b>Reporta:</b> ${row.Nombre} ${row.Apellido}${prov}`;
 
   if (t === 'plaga') {
+    const cert = row.Llego_Certificado ? `\n📋 <b>Llegó certificado:</b> ${row.Llego_Certificado}` : '';
     return (
-`🚨 <b>Registro de Evento — PLAGA</b>\n\n${base}\n\n` +
+`🚨 <b>Registro de Evento — PLAGA</b>\n\n${base}${cert}\n\n` +
 `🌿 <b>Tipo de Plaga:</b> ${row.Tipo_Plaga}\n` +
 `📍 <b>Sector:</b> ${row.Sector_Hallazgo}\n` +
 `📌 <b>Tipo de Evento:</b> ${row.Tipo_Evento_Plaga}\n` +
-`📝 <b>Comentario:</b> ${row.Comentario_Plaga}`
+`📝 <b>Comentario:</b> ${row.Comentario_Plaga}${fotos}`
     );
   }
 
@@ -69,7 +82,7 @@ function buildTelegramMessage(row: Record<string, any>): string {
     return (
 `🚨 <b>Registro de Evento — AROMA</b>\n\n${base}\n\n` +
 `⚠️ <b>Causa:</b> ${causa}\n` +
-`📝 <b>Comentario:</b> ${row.Comentario_Aroma}`
+`📝 <b>Comentario:</b> ${row.Comentario_Aroma}${fotos}`
     );
   }
 
@@ -78,10 +91,11 @@ function buildTelegramMessage(row: Record<string, any>): string {
                : row.Otra_Inci_Quimico    ? 'Otra incidencia'
                : row.Problema_Ped_Quimico ? 'Problema en pedido'
                : '—';
+  const cert = row.Llego_Certificado ? `\n📋 <b>Llegó certificado:</b> ${row.Llego_Certificado}` : '';
   return (
-`🚨 <b>Registro de Evento — QUÍMICO</b>\n\n${base}\n\n` +
+`🚨 <b>Registro de Evento — QUÍMICO</b>\n\n${base}${cert}\n\n` +
 `⚠️ <b>Causa:</b> ${causaQ}\n` +
-`📝 <b>Comentario:</b> ${row.Comentario_Quimicos}`
+`📝 <b>Comentario:</b> ${row.Comentario_Quimicos}${fotos}`
   );
 }
 
@@ -89,14 +103,13 @@ function chatIdsForType(tipo: ReturnType<typeof tipoNorm>, env: Record<string, s
   if (tipo === 'plaga')   return csvToList(env.TELEGRAM_CHAT_IDS_PLAGA);
   if (tipo === 'aroma')   return csvToList(env.TELEGRAM_CHAT_IDS_AROMA);
   if (tipo === 'quimico') return csvToList(env.TELEGRAM_CHAT_IDS_QUIMICO);
-  return csvToList(env.TELEGRAM_CHAT_IDS_DEFAULT); // fallback
+  return csvToList(env.TELEGRAM_CHAT_IDS_DEFAULT);
 }
 
 async function notifyTelegram(row: Record<string, any>, env: Record<string, string | undefined>): Promise<void> {
   const token = env.TELEGRAM_BOT_TOKEN;
   const tipo  = tipoNorm(row.Tipo_Evento);
   const chats = chatIdsForType(tipo, env);
-
   if (!token || !chats.length) return;
 
   const url  = `https://api.telegram.org/bot${token}/sendMessage`;
@@ -113,11 +126,9 @@ async function notifyTelegram(row: Record<string, any>, env: Record<string, stri
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════
    N8N WEBHOOK
-   Envía el objeto completo del registro como JSON al webhook
-   correspondiente según el tipo de evento.
-═══════════════════════════════════════════════════════════════ */
+═══════════════════════════════════════════════════════════ */
 function webhookUrlForType(tipo: ReturnType<typeof tipoNorm>, env: Record<string, string | undefined>): string | undefined {
   if (tipo === 'plaga')   return env.N8N_WEBHOOK_PLAGA;
   if (tipo === 'aroma')   return env.N8N_WEBHOOK_AROMA;
@@ -128,24 +139,25 @@ function webhookUrlForType(tipo: ReturnType<typeof tipoNorm>, env: Record<string
 async function notifyN8N(row: Record<string, any>, env: Record<string, string | undefined>): Promise<void> {
   const tipo       = tipoNorm(row.Tipo_Evento);
   const webhookUrl = webhookUrlForType(tipo, env);
-
-  if (!webhookUrl) return; // Si no está configurado, se omite silenciosamente
+  if (!webhookUrl) return;
 
   await fetch(webhookUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      // ── Datos del registro ──
-      Response_ID:    row.Response_ID,
-      Timestamp:      row.Timestamp,
-      Tienda_ID:      row.Tienda_ID,
-      Tienda_Nombre:  row.Tienda_Nombre,
-      Fecha_Evento:   row.Fecha_Evento,
-      Nombre:         row.Nombre,
-      Apellido:       row.Apellido,
-      Tipo_Evento:    row.Tipo_Evento,
-      // ── Campos específicos por tipo ──
+      Ticket:        row.Ticket,
+      Response_ID:   row.Response_ID,
+      Timestamp:     row.Timestamp,
+      Tienda_ID:     row.Tienda_ID,
+      Tienda_Nombre: row.Tienda_Nombre,
+      Fecha_Evento:  row.Fecha_Evento,
+      Nombre:        row.Nombre,
+      Apellido:      row.Apellido,
+      Tipo_Evento:   row.Tipo_Evento,
+      Proveedor:     row.Proveedor,
+      Fotos_URLs:    row.Fotos_URLs,
       ...(tipo === 'plaga' && {
+        Llego_Certificado: row.Llego_Certificado,
         Tipo_Evento_Plaga: row.Tipo_Evento_Plaga,
         Tipo_Plaga:        row.Tipo_Plaga,
         Sector_Hallazgo:   row.Sector_Hallazgo,
@@ -158,6 +170,7 @@ async function notifyN8N(row: Record<string, any>, env: Record<string, string | 
         Comentario:        row.Comentario_Aroma,
       }),
       ...(tipo === 'quimico' && {
+        Llego_Certificado:    row.Llego_Certificado,
         Falla_Dil_Quimico:    row.Falla_Dil_Quimico,
         Otra_Inci_Quimico:    row.Otra_Inci_Quimico,
         Problema_Ped_Quimico: row.Problema_Ped_Quimico,
@@ -167,9 +180,15 @@ async function notifyN8N(row: Record<string, any>, env: Record<string, string | 
   }).catch(() => {/* fallo silencioso */});
 }
 
-/* ═══════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════
    HANDLER PRINCIPAL
-═══════════════════════════════════════════════════════════════ */
+   Body esperado (multipart no aplica en Edge; se envía JSON
+   con las fotos en base64 dentro del array "fotos"):
+   {
+     ...campos del formulario...,
+     fotos: [{ base64: "data:image/jpeg;base64,...", name: "foto1.jpg", type: "image/jpeg" }]
+   }
+═══════════════════════════════════════════════════════════ */
 export default async function handler(req: Request) {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders(req) });
@@ -187,35 +206,61 @@ export default async function handler(req: Request) {
       if (!String(body[k] || "").trim()) return json({ ok: false, error: `Falta ${k}` }, 400, req);
     }
 
-    const env       = readEnv();
-    const rawEnv    = (globalThis as any).process?.env || {};
-    const token     = await getAccessToken(env);
-    const id        = resolveSheetId(env.GOOGLE_SHEETS_ID);
+    const env    = readEnv();
+    const rawEnv = (globalThis as any).process?.env || {};
+    const token  = await getAccessToken(env);
+    const id     = resolveSheetId(env.GOOGLE_SHEETS_ID);
+
     const SHEET_TND  = env.SHEET_TND  || "Tiendas";
     const SHEET_RESP = env.SHEET_RESP || "Respuestas";
 
-    // Buscar Tienda_ID por nombre
+    // ── 1. Buscar Tienda_ID ──
     const tiendasRes = await fetch(
       `https://sheets.googleapis.com/v4/spreadsheets/${id}/values/${encodeURIComponent(`${SHEET_TND}!A2:B`)}`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
     if (!tiendasRes.ok) throw new Error(`Tiendas error: ${await tiendasRes.text()}`);
     const tiendasJson = await tiendasRes.json();
-
     const target = normalize(body.Tienda_Nombre);
     let tiendaId = ""; let matches = 0;
     for (const r of (tiendasJson.values || [])) {
-      const cc = String(r[0] || ""); const nom = String(r[1] || "");
-      if (normalize(nom) === target) { tiendaId = cc; matches++; }
+      if (normalize(String(r[1] || "")) === target) { tiendaId = String(r[0] || ""); matches++; }
     }
     let warn = "";
     if (matches === 0) warn = "No se encontró la tienda por nombre.";
     if (matches > 1)   warn = "Hay múltiples filas con el mismo Nombre_local.";
 
+    // ── 2. Ticket secuencial ──
+    const tipo       = tipoNorm(body.Tipo_Evento);
+    const ticket     = tipo ? await getNextTicket(token, id, tipo) : 'N/A';
     const responseId = crypto.randomUUID();
     const tsISO      = new Date().toISOString();
 
+    // ── 3. Subir fotos a Google Drive (opcional) ──
+    let fotosURLs = '';
+    const fotos: Array<{ base64: string; name: string; type: string }> = Array.isArray(body.fotos) ? body.fotos : [];
+    if (fotos.length > 0 && token) {
+      const uploadedUrls: string[] = [];
+      for (const foto of fotos) {
+        try {
+          const url = await uploadFileToDrive(token, {
+            base64:   foto.base64,
+            mimeType: foto.type || 'image/jpeg',
+            filename: `${ticket}_${foto.name || 'foto.jpg'}`,
+            folderId: env.GOOGLE_DRIVE_FOLDER_ID,
+          });
+          uploadedUrls.push(url);
+        } catch (e) {
+          // Si falla una foto, continúa con las demás
+          console.error('Error subiendo foto:', e);
+        }
+      }
+      fotosURLs = uploadedUrls.join(' | ');
+    }
+
+    // ── 4. Construir objeto de fila ──
     const rowObj: Record<string, any> = {
+      Ticket:        ticket,
       Response_ID:   responseId,
       Timestamp:     tsISO,
       Tienda_ID:     tiendaId,
@@ -224,52 +269,52 @@ export default async function handler(req: Request) {
       Nombre:        body.Nombre            || '',
       Apellido:      body.Apellido          || '',
       Tipo_Evento:   body.Tipo_Evento       || '',
-      // PLAGA
+      Proveedor:     body.Proveedor         || '',
+      // Plaga
       Tipo_Evento_Plaga: body.Tipo_Evento_Plaga || '',
       Tipo_Plaga:        body.Tipo_Plaga        || '',
       Sector_Hallazgo:   body.Sector_Hallazgo   || '',
       Comentario_Plaga:  body.Comentario_Plaga  || '',
-      // AROMA
+      // Aroma
       Dosif_inco_Aroma:  body.Dosif_inco_Aroma  || '',
       Equip_malo_Aroma:  body.Equip_malo_Aroma  || '',
       Hurto_Equip_Aroma: body.Hurto_Equip_Aroma || '',
       Comentario_Aroma:  body.Comentario_Aroma  || '',
-      // QUÍMICO
+      // Químico
       Falla_Dil_Quimico:    body.Falla_Dil_Quimico    || '',
       Otra_Inci_Quimico:    body.Otra_Inci_Quimico     || '',
       Problema_Ped_Quimico: body.Problema_Ped_Quimico  || '',
       Comentario_Quimicos:  body.Comentario_Quimico    || '',
-      Submitter_IP: '',
+      // Comunes nuevos
+      Llego_Certificado: body.Llego_Certificado || '',
+      Fotos_URLs:        fotosURLs,
+      Submitter_IP:      '',
     };
 
-    // ── Guardar en hoja general Respuestas ──
-    await appendValues(token, id, `${SHEET_RESP}!A:U`, [[...RESP_HEADERS.map(h => rowObj[h])]]);
+    // ── 5. Guardar en Sheets ──
+    await appendValues(token, id, `${SHEET_RESP}!A:Y`, [[...RESP_HEADERS.map(h => rowObj[h])]]);
 
-    // ── Guardar en hoja específica según tipo ──
-    const tipo = String(body.Tipo_Evento || '');
-    if (tipo === 'Plaga') {
-      await appendValues(token, id, `Respuestas_Plaga!A:K`,   [[...HDR_PLAGA.map(h => rowObj[h])]]);
-    } else if (tipo === 'Aroma') {
-      await appendValues(token, id, `Respuestas_Aroma!A:H`,   [[...HDR_AROMA.map(h => rowObj[h])]]);
-    } else if (tipo === 'Químico' || tipo === 'Quimico') {
-      await appendValues(token, id, `Respuestas_Quimico!A:J`, [[...HDR_QUIM.map(h => rowObj[h])]]);
+    const tipoRaw = String(body.Tipo_Evento || '');
+    if (tipoRaw === 'Plaga') {
+      await appendValues(token, id, `Respuestas_Plaga!A:O`,   [[...HDR_PLAGA.map(h => rowObj[h])]]);
+    } else if (tipoRaw === 'Aroma') {
+      await appendValues(token, id, `Respuestas_Aroma!A:N`,   [[...HDR_AROMA.map(h => rowObj[h])]]);
+    } else if (tipoRaw === 'Químico' || tipoRaw === 'Quimico') {
+      await appendValues(token, id, `Respuestas_Quimico!A:O`, [[...HDR_QUIM.map(h => rowObj[h])]]);
     }
 
-    // ── Notificaciones (paralelas, fallos silenciosos) ──
+    // ── 6. Notificaciones paralelas (fallos silenciosos) ──
     await Promise.allSettled([
       notifyTelegram(rowObj, rawEnv),
       notifyN8N(rowObj, rawEnv),
     ]);
 
-    return json({ ok: true, Response_ID: responseId, Tienda_ID: tiendaId, warn }, 200, req);
+    return json({ ok: true, Ticket: ticket, Response_ID: responseId, Tienda_ID: tiendaId, warn }, 200, req);
   } catch (e: any) {
     return json({ ok: false, error: e?.message || "Error interno" }, 500, req);
   }
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   SHEETS HELPER
-═══════════════════════════════════════════════════════════════ */
 async function appendValues(token: string, sheetId: string, range: string, values: any[][]) {
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED`;
   const r = await fetch(url, {
