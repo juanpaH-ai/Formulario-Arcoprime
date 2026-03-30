@@ -1,4 +1,4 @@
-import { readEnv, corsHeaders, getAccessToken, json, ok, resolveSheetId } from "./_google";
+import { readEnv, corsHeaders, getAccessToken, json, resolveSheetId } from "./_google";
 
 export const config = { runtime: "edge" };
 
@@ -11,65 +11,77 @@ export default async function handler(req: Request) {
   }
 
   try {
-    const env = readEnv();
-    const token = await getAccessToken(env);
+    const env      = readEnv();
+    const token    = await getAccessToken(env);
+    const id       = resolveSheetId(env.GOOGLE_SHEETS_ID);
     const SHEET_TND = env.SHEET_TND || "Tiendas";
     const SHEET_CAT = env.SHEET_CAT || "Catalogos";
-    const id = resolveSheetId(env.GOOGLE_SHEETS_ID);
 
-    // Tiendas A2:B
-    const tiendasRes = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${id}/values/${encodeURIComponent(`${SHEET_TND}!A2:B`)}`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+    // ══════════════════════════════════════════════════════
+    //  Una sola llamada batchGet para todas las columnas
+    //  de catálogos → evita el límite de 60 req/min
+    // ══════════════════════════════════════════════════════
+    const catRanges = [
+      `${SHEET_CAT}!A2:A`,  // tipoEvento
+      `${SHEET_CAT}!C2:C`,  // tipoEventoPlaga
+      `${SHEET_CAT}!E2:E`,  // tipoPlaga
+      `${SHEET_CAT}!G2:G`,  // sectores
+      `${SHEET_CAT}!I2:I`,  // catAroma
+      `${SHEET_CAT}!K2:K`,  // catQuimico
+      `${SHEET_CAT}!L2:L`,  // R1_Respuestas
+      `${SHEET_CAT}!M2:M`,  // C5_Respuestas
+      `${SHEET_CAT}!N2:N`,  // M4_Respuestas
+      `${SHEET_CAT}!O2:O`,  // H4_Respuestas
+      `${SHEET_CAT}!P2:P`,  // P1_Respuestas
+    ];
+
+    const rangesParam = catRanges.map(r => `ranges=${encodeURIComponent(r)}`).join("&");
+
+    // Llamada 1: tiendas
+    // Llamada 2: todos los catálogos en batch
+    const [tiendasRes, batchRes] = await Promise.all([
+      fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${id}/values/${encodeURIComponent(`${SHEET_TND}!A2:B`)}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      ),
+      fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${id}/values:batchGet?${rangesParam}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      ),
+    ]);
+
     if (!tiendasRes.ok) throw new Error(`Tiendas error: ${await tiendasRes.text()}`);
+    if (!batchRes.ok)   throw new Error(`Catálogos error: ${await batchRes.text()}`);
+
     const tiendasJson = await tiendasRes.json();
+    const batchJson   = await batchRes.json();
+
+    // Parsear tiendas
     const tiendas = (tiendasJson.values || [])
       .map((r: string[]) => ({ id: String(r[0] || ""), nombre: String(r[1] || "") }))
       .filter((t: any) => t.id && t.nombre);
 
-    // Helper para columnas sueltas
-    async function col(range: string) {
-      const r = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${id}/values/${encodeURIComponent(range)}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (!r.ok) throw new Error(`${range} error: ${await r.text()}`);
-      const j = await r.json();
-      return (j.values || []).map((v: string[]) => v[0]).filter(Boolean);
+    // Helper para extraer una columna del batch
+    const vr = batchJson.valueRanges || [];
+    function extractCol(index: number): string[] {
+      return ((vr[index]?.values || []) as string[][]).map(v => v[0]).filter(Boolean);
     }
 
-    // Obtener las columnas de las categorías
-    const tipoEvento      = await col(`${SHEET_CAT}!A2:A`);
-    const tipoEventoPlaga = await col(`${SHEET_CAT}!C2:C`);
-    const tipoPlaga       = await col(`${SHEET_CAT}!E2:E`);
-    const sectores        = await col(`${SHEET_CAT}!G2:G`);
-    const catAroma        = await col(`${SHEET_CAT}!I2:I`);
-    const catQuimico      = await col(`${SHEET_CAT}!K2:K`);
-    
-    // Obtener las respuestas para las plagas (por columnas de respuestas)
-    const R1_Respuestas   = await col(`${SHEET_CAT}!L2:L`);
-    const C5_Respuestas   = await col(`${SHEET_CAT}!M2:M`);
-    const M4_Respuestas   = await col(`${SHEET_CAT}!N2:N`);
-    const H4_Respuestas   = await col(`${SHEET_CAT}!O2:O`);
-    const P1_Respuestas   = await col(`${SHEET_CAT}!P2:P`);
-
-    // Devolver las respuestas junto con las tiendas y otros datos
     return json(
-      { 
-        ok: true, 
-        tiendas, 
-        tipoEvento, 
-        tipoEventoPlaga, 
-        tipoPlaga, 
-        sectores, 
-        catAroma, 
-        catQuimico, 
-        R1_Respuestas, 
-        C5_Respuestas, 
-        M4_Respuestas, 
-        H4_Respuestas, 
-        P1_Respuestas
+      {
+        ok:              true,
+        tiendas,
+        tipoEvento:      extractCol(0),
+        tipoEventoPlaga: extractCol(1),
+        tipoPlaga:       extractCol(2),
+        sectores:        extractCol(3),
+        catAroma:        extractCol(4),
+        catQuimico:      extractCol(5),
+        R1_Respuestas:   extractCol(6),
+        C5_Respuestas:   extractCol(7),
+        M4_Respuestas:   extractCol(8),
+        H4_Respuestas:   extractCol(9),
+        P1_Respuestas:   extractCol(10),
       },
       200,
       req
@@ -78,4 +90,3 @@ export default async function handler(req: Request) {
     return json({ ok: false, error: e?.message || "Error interno" }, 500, req);
   }
 }
-
