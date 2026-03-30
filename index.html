@@ -483,7 +483,8 @@
         files.forEach(file => {
           const reader = new FileReader();
           reader.onload = e => {
-            fotosSeleccionadas.push({ base64: e.target.result, name: file.name, type: file.type });
+            // Guardamos tanto el File real (para enviar) como el base64 (para preview)
+            fotosSeleccionadas.push({ file: file, base64: e.target.result, name: file.name, type: file.type });
             renderPreviews();
           };
           reader.readAsDataURL(file);
@@ -555,33 +556,29 @@
         if (tipoN === 'aroma')   { proveedor = byId('proveedorAroma').value; }
         if (tipoN === 'quimico') { proveedor = byId('proveedorQuimico').value; llegoCert = certState.quimico; }
 
-        const payload = {
-          Tienda_Nombre:     byId('tienda').value.trim(),
-          Fecha_Evento:      byId('fecha').value,
-          Nombre:            byId('nombre').value.trim(),
-          Apellido:          byId('apellido').value.trim(),
-          Tipo_Evento:       tipo,
-          Proveedor:         proveedor,
-          Llego_Certificado: llegoCert,
-          // Plaga
-          Tipo_Evento_Plaga: byId('tipoEventoPlaga').value,
-          Tipo_Plaga:        byId('tipoPlaga').value,
-          Sector_Hallazgo:   byId('sector').value,
-          Comentario_Plaga:  byId('comentarioPlaga').value,
-          // Aroma
-          Comentario_Aroma:  byId('comentarioAroma').value,
-          // Químico
-          Comentario_Quimico: byId('comentarioQuim').value,
-          // Fotos en base64
-          fotos: fotosSeleccionadas,
-        };
+        // Usar FormData con archivos reales (igual que formulario vencidos)
+        const fd = new FormData();
+        fd.append('Tienda_Nombre',     byId('tienda').value.trim());
+        fd.append('Fecha_Evento',      byId('fecha').value);
+        fd.append('Nombre',            byId('nombre').value.trim());
+        fd.append('Apellido',          byId('apellido').value.trim());
+        fd.append('Tipo_Evento',       tipo);
+        fd.append('Proveedor',         proveedor);
+        fd.append('Llego_Certificado', llegoCert);
+        fd.append('Tipo_Evento_Plaga', byId('tipoEventoPlaga').value);
+        fd.append('Tipo_Plaga',        byId('tipoPlaga').value);
+        fd.append('Sector_Hallazgo',   byId('sector').value);
+        fd.append('Comentario_Plaga',  byId('comentarioPlaga').value);
+        fd.append('Comentario_Aroma',  byId('comentarioAroma').value);
+        fd.append('Comentario_Quimico', byId('comentarioQuim').value);
+
+        // Adjuntar fotos como archivos reales (no base64)
+        fotosSeleccionadas.forEach((foto, i) => {
+          fd.append(`foto${i}`, foto.file, foto.name);
+        });
 
         try {
-          const res  = await fetch('/api/submit', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify(payload),
-          });
+          const res  = await fetch('/api/submit', { method: 'POST', body: fd });
           const data = await res.json();
           if (!data.ok) throw new Error(data.error || 'Error al enviar');
           msgEl.textContent = `✅ Formulario enviado correctamente. Ticket: ${data.Ticket}`;
