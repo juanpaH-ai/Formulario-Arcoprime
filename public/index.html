@@ -20,15 +20,27 @@
         padding: 20px;
         text-align: center;
       }
-      header img { max-width: 120px; height: auto; margin: 5px; }
+      header img {
+        max-width: 120px;
+        height: auto;
+        margin: 5px;
+      }
       .logo-container {
         display: flex;
         justify-content: space-between;
         align-items: center;
         gap: 15px;
       }
-      h1 { margin-top: 20px; font-size: 24px; font-weight: bold; }
-      h2 { margin: 10px 0; font-size: 20px; font-weight: normal; }
+      h1 {
+        margin-top: 20px;
+        font-size: 24px;
+        font-weight: bold;
+      }
+      h2 {
+        margin: 10px 0;
+        font-size: 20px;
+        font-weight: normal;
+      }
       .card {
         background: #fff;
         border-radius: 12px;
@@ -36,8 +48,14 @@
         padding: 20px;
         margin-bottom: 16px;
       }
-      .form-group { margin-bottom: 15px; }
-      label { font-weight: 600; display: block; margin-bottom: 6px; }
+      .form-group {
+        margin-bottom: 15px;
+      }
+      label {
+        font-weight: 600;
+        display: block;
+        margin-bottom: 6px;
+      }
       input[type="text"], input[type="date"], select, textarea {
         width: 100%;
         padding: 10px;
@@ -66,18 +84,23 @@
         cursor: pointer;
         font-weight: 600;
       }
-      .primary   { background: #4AC66C; color: white; }
+      .primary { background: #4AC66C; color: white; }
       .secondary { background: #A369F8; color: white; }
-      .ghost     { background: #e0e0e0; }
-      #msg { text-align: center; margin-top: 10px; font-weight: 500; }
-      .invalid { border-color: #d93025 !important; background: #feecec !important; }
+      .ghost { background: #e0e0e0; }
+      #msg {
+        text-align: center;
+        margin-top: 10px;
+        font-weight: 500;
+      }
+      .invalid {
+        border-color: #d93025 !important;
+        background: #feecec !important;
+      }
       #msg.success { color: #4AC66C; }
-      #msg.error   { color: red; }
+      #msg.error { color: red; }
 
       /* ── Certificado Sí/No ── */
-      .cert-group { margin-bottom: 15px; }
-      .cert-group label { font-weight: 600; margin-bottom: 8px; display: block; }
-      .cert-options { display: flex; gap: 12px; }
+      .cert-options { display: flex; gap: 12px; margin-bottom: 15px; }
       .cert-btn {
         flex: 1;
         padding: 10px;
@@ -90,56 +113,37 @@
         transition: all .2s;
         color: #555;
       }
-      .cert-btn.active-si  { background: #4AC66C; border-color: #4AC66C; color: #fff; }
-      .cert-btn.active-no  { background: #e53935; border-color: #e53935; color: #fff; }
+      .cert-btn.active-si { background: #4AC66C; border-color: #4AC66C; color: #fff; }
+      .cert-btn.active-no { background: #e53935; border-color: #e53935; color: #fff; }
 
       /* ── Zona de fotos ── */
       .foto-zone {
         border: 2px dashed #b0bec5;
         border-radius: 10px;
-        padding: 20px;
+        padding: 18px;
         text-align: center;
         cursor: pointer;
         transition: border-color .2s;
         background: #fafafa;
       }
       .foto-zone:hover { border-color: #003B70; }
-      .foto-zone p { margin: 6px 0; color: #888; font-size: 14px; }
-      .foto-previews {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-top: 12px;
-      }
-      .foto-thumb {
-        position: relative;
-        width: 90px;
-        height: 90px;
-      }
+      .foto-zone p { margin: 4px 0; color: #888; font-size: 14px; }
+      .foto-previews { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+      .foto-thumb { position: relative; width: 90px; height: 90px; }
       .foto-thumb img {
-        width: 90px;
-        height: 90px;
+        width: 90px; height: 90px;
         object-fit: cover;
         border-radius: 8px;
         border: 1px solid #ddd;
       }
       .foto-thumb .remove-foto {
-        position: absolute;
-        top: -6px;
-        right: -6px;
-        background: #e53935;
-        color: white;
-        border: none;
-        border-radius: 50%;
-        width: 22px;
-        height: 22px;
-        font-size: 13px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0;
-        font-weight: bold;
+        position: absolute; top: -6px; right: -6px;
+        background: #e53935; color: white;
+        border: none; border-radius: 50%;
+        width: 22px; height: 22px;
+        font-size: 13px; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        padding: 0; font-weight: bold;
       }
       .foto-count { font-size: 13px; color: #888; margin-top: 6px; }
     </style>
@@ -150,7 +154,7 @@
       <h2>Comida Segura - Calidad Arcoprime</h2>
     </header>
 
-    <!-- ════════════════ DATOS GENERALES ════════════════ -->
+    <!-- DATOS GENERALES -->
     <div class="card">
       <h3>Datos Generales</h3>
       <div class="row">
@@ -182,12 +186,12 @@
       </div>
     </div>
 
-    <!-- ════════════════ BLOQUE PLAGA ════════════════ -->
+    <!-- BLOQUE PLAGA -->
     <div id="blkPlaga" class="card hidden">
       <h3>Detalle - Plaga</h3>
 
       <!-- Llegó el certificado -->
-      <div class="cert-group" id="certPlagaGroup">
+      <div>
         <label>¿Llegó el certificado?</label>
         <div class="cert-options">
           <button type="button" class="cert-btn" id="certPlagaSi" onclick="setCert('plaga','Sí')">✅ Sí</button>
@@ -195,12 +199,13 @@
         </div>
       </div>
 
+      <!-- Proveedor -->
       <div class="row">
         <div>
           <label for="proveedorPlaga">Proveedor</label>
+          <!-- ✏️ Para cambiar proveedores de Plaga: edita las <option> de este select -->
           <select id="proveedorPlaga">
             <option value="">Selecciona...</option>
-            <!-- ✏️ PARA CAMBIAR LOS PROVEEDORES DE PLAGA: edita las opciones de este select -->
             <option value="Orkin">Orkin</option>
             <option value="Ecolab">Ecolab</option>
           </select>
@@ -230,16 +235,17 @@
       <div id="plagaExtras" class="card" style="margin-top:12px; display:none;"></div>
     </div>
 
-    <!-- ════════════════ BLOQUE AROMA ════════════════ -->
+    <!-- BLOQUE AROMA -->
     <div id="blkAroma" class="card hidden">
       <h3>Detalle - Aroma</h3>
 
+      <!-- Proveedor -->
       <div class="row">
         <div>
           <label for="proveedorAroma">Proveedor</label>
+          <!-- ✏️ Para cambiar proveedores de Aroma: edita las <option> de este select -->
           <select id="proveedorAroma">
             <option value="">Selecciona...</option>
-            <!-- ✏️ PARA CAMBIAR LOS PROVEEDORES DE AROMA: edita las opciones de este select -->
             <option value="Por definir">Por definir</option>
           </select>
         </div>
@@ -255,12 +261,12 @@
       </div>
     </div>
 
-    <!-- ════════════════ BLOQUE QUIMICO ════════════════ -->
+    <!-- BLOQUE QUIMICO -->
     <div id="blkQuimico" class="card hidden">
       <h3>Detalle - Químico</h3>
 
       <!-- Llegó el certificado -->
-      <div class="cert-group" id="certQuimGroup">
+      <div>
         <label>¿Llegó el certificado?</label>
         <div class="cert-options">
           <button type="button" class="cert-btn" id="certQuimSi" onclick="setCert('quimico','Sí')">✅ Sí</button>
@@ -268,12 +274,13 @@
         </div>
       </div>
 
+      <!-- Proveedor -->
       <div class="row">
         <div>
           <label for="proveedorQuimico">Proveedor</label>
+          <!-- ✏️ Para cambiar proveedores de Químico: edita las <option> de este select -->
           <select id="proveedorQuimico">
             <option value="">Selecciona...</option>
-            <!-- ✏️ PARA CAMBIAR LOS PROVEEDORES DE QUÍMICO: edita las opciones de este select -->
             <option value="Por definir">Por definir</option>
           </select>
         </div>
@@ -289,7 +296,7 @@
       </div>
     </div>
 
-    <!-- ════════════════ BLOQUE FOTOS (siempre visible al elegir tipo) ════════════════ -->
+    <!-- BLOQUE FOTOS (aparece al elegir cualquier tipo de evento) -->
     <div id="blkFotos" class="card hidden">
       <h3>Fotos <span style="font-weight:400; font-size:14px; color:#888;">(opcional)</span></h3>
       <div class="foto-zone" id="fotoZone" onclick="byId('fotoInput').click()">
@@ -301,17 +308,15 @@
       <p class="foto-count" id="fotoCount"></p>
     </div>
 
-    <!-- ════════════════ BOTONES ════════════════ -->
+    <!-- BOTONES -->
     <div class="actions">
-      <button class="ghost"    type="button" onclick="limpiar()">Limpiar</button>
-      <button class="primary"  type="button" onclick="enviar()">Enviar</button>
+      <button class="ghost" type="button" onclick="limpiar()">Limpiar</button>
+      <button class="primary" type="button" onclick="enviar()">Enviar</button>
     </div>
+
     <p id="msg"></p>
 
     <script>
-      // ─────────────────────────────────────────────────
-      //  ESTADO GLOBAL
-      // ─────────────────────────────────────────────────
       let TIENDAS = [];
       let ALL_TIPO_EVENTO_PLAGA = [];
       let fotosSeleccionadas = [];   // [{ base64, name, type }]
@@ -319,21 +324,19 @@
 
       function byId(id) { return document.getElementById(id); }
 
-      // ─────────────────────────────────────────────────
-      //  CARGA INICIAL
-      // ─────────────────────────────────────────────────
-      const API_BASE = '';   // mismo origen; ajustar si usas subdominio
-
+      // ── Carga inicial ──
       async function initUI() {
         try {
-          const res  = await fetch(`${API_BASE}/api/init`);
+          const res  = await fetch('/api/init');
           const data = await res.json();
           if (!data.ok) throw new Error(data.error || 'Error al cargar catálogos');
 
           TIENDAS = data.tiendas || [];
-          ALL_TIPO_EVENTO_PLAGA = data.tipoEventoPlaga || [];
+          if (Array.isArray(data.tipoEventoPlaga)) {
+            ALL_TIPO_EVENTO_PLAGA = data.tipoEventoPlaga;
+            renderTipoEventoPlaga();
+          }
 
-          // Datalist de tiendas
           const dl = byId('tiendaList');
           dl.innerHTML = '';
           TIENDAS.forEach(t => {
@@ -342,18 +345,23 @@
             dl.appendChild(opt);
           });
 
-          fillSelect('tipoEvento',  data.tipoEvento,  true);
-          fillSelect('tipoPlaga',   data.tipoPlaga,   true);
-          fillSelect('sector',      data.sectores,    true);
-          fillSelect('aromaCat',    data.catAroma,    true);
-          fillSelect('quimCat',     data.catQuimico,  true);
+          const te = byId('tipoEvento');
+          te.innerHTML = '<option value="">Selecciona...</option>';
+          (data.tipoEvento || []).forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v; opt.textContent = v; te.appendChild(opt);
+          });
 
-          renderTipoEventoPlaga();
+          fillSelect('tipoPlaga',  data.tipoPlaga,  true);
+          fillSelect('sector',     data.sectores,   true);
+          fillSelect('aromaCat',   data.catAroma,   true);
+          fillSelect('quimCat',    data.catQuimico, true);
 
-          byId('tipoEvento').addEventListener('change', onTipoEventoChange);
+          te.addEventListener('change', onTipoEventoChange);
           byId('tipoPlaga').addEventListener('change', renderTipoEventoPlaga);
+
         } catch (err) {
-          byId('msg').textContent = '⚠️ Error al cargar los catálogos: ' + err.message;
+          byId('msg').textContent = '❌ Error cargando catálogos: ' + err.message;
           byId('msg').className = 'error';
         }
       }
@@ -369,12 +377,10 @@
 
       initUI();
 
-      // ─────────────────────────────────────────────────
-      //  TIPO EVENTO PLAGA
-      // ─────────────────────────────────────────────────
+      // ── Tipo Evento Plaga ──
       function renderTipoEventoPlaga() {
-        const sel       = byId('tipoEventoPlaga');
-        const current   = sel.value;
+        const sel      = byId('tipoEventoPlaga');
+        const current  = sel.value;
         const plagaCode = byId('tipoPlaga').value;
         const permitidas = allowedTipoEventoPlagaFor(plagaCode);
 
@@ -396,35 +402,23 @@
         return ALL_TIPO_EVENTO_PLAGA;
       }
 
-      // ─────────────────────────────────────────────────
-      //  TOGGLE DE BLOQUES
-      // ─────────────────────────────────────────────────
+      // ── Toggle bloques ──
       function onTipoEventoChange() {
         const tipo = byId('tipoEvento').value;
         toggle(byId('blkPlaga'),   tipo === 'Plaga');
         toggle(byId('blkAroma'),   tipo === 'Aroma');
         toggle(byId('blkQuimico'), tipo === 'Químico');
         toggle(byId('blkFotos'),   tipo !== '');
-        // Limpiar estado de certificado al cambiar tipo
         certState = { plaga: '', quimico: '' };
         resetCertBtns();
       }
 
       function toggle(el, show) { el.classList.toggle('hidden', !show); }
 
-      // ─────────────────────────────────────────────────
-      //  CERTIFICADO (Sí / No)
-      // ─────────────────────────────────────────────────
+      // ── Certificado ──
       function setCert(tipo, valor) {
         certState[tipo] = valor;
         resetCertBtns();
-        if (tipo === 'plaga') {
-          byId('certPlagaSi').classList.toggle('active-si', valor === 'Sí');
-          byId('certPlagaNo').classList.toggle('active-no', valor === 'No');
-        } else {
-          byId('certQuimSi').classList.toggle('active-si', valor === 'Sí');
-          byId('certQuimNo').classList.toggle('active-no', valor === 'No');
-        }
       }
 
       function resetCertBtns() {
@@ -432,15 +426,13 @@
           const el = byId(id);
           if (el) el.classList.remove('active-si','active-no');
         });
-        if (certState.plaga === 'Sí') byId('certPlagaSi')?.classList.add('active-si');
-        if (certState.plaga === 'No') byId('certPlagaNo')?.classList.add('active-no');
+        if (certState.plaga   === 'Sí') byId('certPlagaSi')?.classList.add('active-si');
+        if (certState.plaga   === 'No') byId('certPlagaNo')?.classList.add('active-no');
         if (certState.quimico === 'Sí') byId('certQuimSi')?.classList.add('active-si');
         if (certState.quimico === 'No') byId('certQuimNo')?.classList.add('active-no');
       }
 
-      // ─────────────────────────────────────────────────
-      //  FOTOS
-      // ─────────────────────────────────────────────────
+      // ── Fotos ──
       function onFotosSelected(event) {
         const files = Array.from(event.target.files);
         files.forEach(file => {
@@ -451,7 +443,6 @@
           };
           reader.readAsDataURL(file);
         });
-        // Limpiar input para permitir volver a seleccionar el mismo archivo
         event.target.value = '';
       }
 
@@ -467,8 +458,7 @@
           `;
           container.appendChild(thumb);
         });
-        const count = byId('fotoCount');
-        count.textContent = fotosSeleccionadas.length > 0
+        byId('fotoCount').textContent = fotosSeleccionadas.length > 0
           ? `${fotosSeleccionadas.length} foto${fotosSeleccionadas.length > 1 ? 's' : ''} seleccionada${fotosSeleccionadas.length > 1 ? 's' : ''}`
           : '';
       }
@@ -478,9 +468,7 @@
         renderPreviews();
       }
 
-      // ─────────────────────────────────────────────────
-      //  LIMPIAR
-      // ─────────────────────────────────────────────────
+      // ── Limpiar ──
       function limpiar() {
         ['tienda','fecha','nombre','apellido',
          'comentarioPlaga','comentarioAroma','comentarioQuim'].forEach(id => {
@@ -490,7 +478,9 @@
          'aromaCat','quimCat','proveedorPlaga','proveedorAroma','proveedorQuimico'].forEach(id => {
           const el = byId(id); if (el) el.value = '';
         });
-        ['blkPlaga','blkAroma','blkQuimico','blkFotos'].forEach(id => byId(id)?.classList.add('hidden'));
+        ['blkPlaga','blkAroma','blkQuimico','blkFotos'].forEach(id =>
+          byId(id)?.classList.add('hidden')
+        );
         fotosSeleccionadas = [];
         renderPreviews();
         certState = { plaga: '', quimico: '' };
@@ -499,44 +489,34 @@
         byId('msg').className = '';
       }
 
-      // ─────────────────────────────────────────────────
-      //  ENVIAR
-      // ─────────────────────────────────────────────────
+      // ── Enviar ──
       async function enviar() {
-        const msgEl   = byId('msg');
-        const tipo    = byId('tipoEvento').value;
-        const tipoNorm = tipo.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const msgEl  = byId('msg');
+        const tipo   = byId('tipoEvento').value;
+        const tipoN  = tipo.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-        // Validación básica
-        if (!byId('tienda').value.trim())  return showError('El campo Tienda es obligatorio.');
-        if (!byId('fecha').value)          return showError('La fecha del evento es obligatoria.');
-        if (!byId('nombre').value.trim())  return showError('El campo Nombre es obligatorio.');
+        if (!byId('tienda').value.trim())   return showError('El campo Tienda es obligatorio.');
+        if (!byId('fecha').value)            return showError('La fecha del evento es obligatoria.');
+        if (!byId('nombre').value.trim())   return showError('El campo Nombre es obligatorio.');
         if (!byId('apellido').value.trim()) return showError('El campo Cargo es obligatorio.');
-        if (!tipo)                          return showError('Debes seleccionar un Tipo de Evento.');
+        if (!tipo)                           return showError('Debes seleccionar un Tipo de Evento.');
 
         msgEl.textContent = '⏳ Enviando...';
         msgEl.className = '';
 
-        // Proveedor y certificado según tipo
         let proveedor = '';
         let llegoCert = '';
-        if (tipoNorm === 'plaga') {
-          proveedor = byId('proveedorPlaga').value;
-          llegoCert = certState.plaga;
-        } else if (tipoNorm === 'aroma') {
-          proveedor = byId('proveedorAroma').value;
-        } else if (tipoNorm === 'quimico') {
-          proveedor = byId('proveedorQuimico').value;
-          llegoCert = certState.quimico;
-        }
+        if (tipoN === 'plaga')   { proveedor = byId('proveedorPlaga').value;   llegoCert = certState.plaga; }
+        if (tipoN === 'aroma')   { proveedor = byId('proveedorAroma').value; }
+        if (tipoN === 'quimico') { proveedor = byId('proveedorQuimico').value; llegoCert = certState.quimico; }
 
         const payload = {
-          Tienda_Nombre:  byId('tienda').value.trim(),
-          Fecha_Evento:   byId('fecha').value,
-          Nombre:         byId('nombre').value.trim(),
-          Apellido:       byId('apellido').value.trim(),
-          Tipo_Evento:    tipo,
-          Proveedor:      proveedor,
+          Tienda_Nombre:     byId('tienda').value.trim(),
+          Fecha_Evento:      byId('fecha').value,
+          Nombre:            byId('nombre').value.trim(),
+          Apellido:          byId('apellido').value.trim(),
+          Tipo_Evento:       tipo,
+          Proveedor:         proveedor,
           Llego_Certificado: llegoCert,
           // Plaga
           Tipo_Evento_Plaga: byId('tipoEventoPlaga').value,
@@ -544,28 +524,21 @@
           Sector_Hallazgo:   byId('sector').value,
           Comentario_Plaga:  byId('comentarioPlaga').value,
           // Aroma
-          Dosif_inco_Aroma:  '',
-          Equip_malo_Aroma:  '',
-          Hurto_Equip_Aroma: '',
           Comentario_Aroma:  byId('comentarioAroma').value,
           // Químico
-          Falla_Dil_Quimico:    '',
-          Otra_Inci_Quimico:    '',
-          Problema_Ped_Quimico: '',
-          Comentario_Quimico:   byId('comentarioQuim').value,
+          Comentario_Quimico: byId('comentarioQuim').value,
           // Fotos en base64
           fotos: fotosSeleccionadas,
         };
 
         try {
-          const res  = await fetch(`${API_BASE}/api/submit`, {
-            method: 'POST',
+          const res  = await fetch('/api/submit', {
+            method:  'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
+            body:    JSON.stringify(payload),
           });
           const data = await res.json();
           if (!data.ok) throw new Error(data.error || 'Error al enviar');
-
           msgEl.textContent = `✅ Formulario enviado correctamente. Ticket: ${data.Ticket}`;
           msgEl.className = 'success';
           limpiar();
