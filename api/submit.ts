@@ -38,24 +38,24 @@ const HDR_QUIM = [
 /* ═══════════════════════════════════════════════════════════
    GOOGLE AUTH (misma service account)
 ═══════════════════════════════════════════════════════════ */
-function getAuth() {
-  const raw = process.env.GOOGLE_SERVICE_ACCOUNT_KEY || "";
-  let keyData: any = {};
-
-  // Soporta: PEM directo, JSON completo de SA, o con \n literales
-  const cleaned = raw.includes("\\n") ? raw.replace(/\\n/g, "\n") : raw;
-  if (cleaned.trim().startsWith("{")) {
-    keyData = JSON.parse(cleaned);
-  } else {
-    // PEM directo — construir objeto credentials
-    keyData = {
-      client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-      private_key: cleaned,
-    };
+function normalizePem(raw: string): string {
+  if (!raw) throw new Error("GOOGLE_SERVICE_ACCOUNT_KEY vacío");
+  let pem = raw.trim();
+  if (pem.startsWith("{")) {
+    try { const obj = JSON.parse(pem); if (obj.private_key) pem = String(obj.private_key); } catch {}
   }
+  if (pem.includes("\\n")) pem = pem.replace(/\\n/g, "\n");
+  if ((pem.startsWith('"') && pem.endsWith('"')) || (pem.startsWith("'") && pem.endsWith("\'"))) {
+    pem = pem.slice(1, -1);
+  }
+  return pem;
+}
 
+function getAuth() {
+  const privateKey  = normalizePem(process.env.GOOGLE_SERVICE_ACCOUNT_KEY || "");
+  const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || "";
   return new google.auth.GoogleAuth({
-    credentials: keyData,
+    credentials: { client_email: clientEmail, private_key: privateKey },
     scopes: [
       "https://www.googleapis.com/auth/spreadsheets",
       "https://www.googleapis.com/auth/drive",
@@ -141,15 +141,15 @@ function buildTelegramMessage(row: Record<string, any>): string {
       `📝 <b>Comentario:</b> ${row.Comentario_Plaga}${fotos}`;
   }
   if (t === "aroma") {
-    const causa = row.Dosif_inco_Aroma  ? "Dosificación incorrecta"
-                : row.Equip_malo_Aroma  ? "Equipo con fallas"
-                : row.Hurto_Equip_Aroma ? "Hurto de equipo" : "—";
+    const causa = row.Dosif_inco_Aroma === "Sí" ? "Dosificación incorrecta"
+                : row.Equip_malo_Aroma  === "Sí" ? "Equipo con fallas"
+                : row.Hurto_Equip_Aroma === "Sí" ? "Hurto de equipo" : "—";
     return `🚨 <b>Registro de Evento — AROMA</b>\n\n${base}\n\n` +
       `⚠️ <b>Causa:</b> ${causa}\n📝 <b>Comentario:</b> ${row.Comentario_Aroma}${fotos}`;
   }
-  const causaQ = row.Falla_Dil_Quimico    ? "Falla en dilutor"
-               : row.Otra_Inci_Quimico    ? "Otra incidencia"
-               : row.Problema_Ped_Quimico ? "Problema en pedido" : "—";
+  const causaQ = row.Falla_Dil_Quimico    === "Sí" ? "Falla en dilutor"
+               : row.Otra_Inci_Quimico    === "Sí" ? "Otra incidencia"
+               : row.Problema_Ped_Quimico === "Sí" ? "Problema en pedido" : "—";
   const cert = row.Llego_Certificado ? `\n📋 <b>Llegó certificado:</b> ${row.Llego_Certificado}` : "";
   return `🚨 <b>Registro de Evento — QUÍMICO</b>\n\n${base}${cert}\n\n` +
     `⚠️ <b>Causa:</b> ${causaQ}\n📝 <b>Comentario:</b> ${row.Comentario_Quimicos}${fotos}`;
@@ -336,17 +336,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       Tipo_Plaga:           fields.Tipo_Plaga           || "",
       Sector_Hallazgo:      fields.Sector_Hallazgo      || "",
       Comentario_Plaga:     fields.Comentario_Plaga     || "",
-      Dosif_inco_Aroma:     fields.Dosif_inco_Aroma     || "",
-      Equip_malo_Aroma:     fields.Equip_malo_Aroma     || "",
-      Hurto_Equip_Aroma:    fields.Hurto_Equip_Aroma    || "",
+      // Aroma: aromaCat mapea a la categoría; los checkboxes se guardan según el valor
+      Dosif_inco_Aroma:     fields.aromaCat === "Dosificación incorrecta" ? "Sí" : (fields.Dosif_inco_Aroma || ""),
+      Equip_malo_Aroma:     fields.aromaCat === "Equipo con fallas"       ? "Sí" : (fields.Equip_malo_Aroma || ""),
+      Hurto_Equip_Aroma:    fields.aromaCat === "Hurto de equipo"         ? "Sí" : (fields.Hurto_Equip_Aroma || ""),
       Comentario_Aroma:     fields.Comentario_Aroma     || "",
-      Falla_Dil_Quimico:    fields.Falla_Dil_Quimico    || "",
-      Otra_Inci_Quimico:    fields.Otra_Inci_Quimico    || "",
-      Problema_Ped_Quimico: fields.Problema_Ped_Quimico || "",
+      // Químico: quimCat mapea a la categoría
+      Falla_Dil_Quimico:    fields.quimCat === "Falla en dilutor"    ? "Sí" : (fields.Falla_Dil_Quimico || ""),
+      Otra_Inci_Quimico:    fields.quimCat === "Otra incidencia"     ? "Sí" : (fields.Otra_Inci_Quimico || ""),
+      Problema_Ped_Quimico: fields.quimCat === "Problema en pedido"  ? "Sí" : (fields.Problema_Ped_Quimico || ""),
       Comentario_Quimicos:  fields.Comentario_Quimico   || "",
       Llego_Certificado:    fields.Llego_Certificado    || "",
       Fotos_URLs:    fotosURLs,
-      Submitter_IP:  (req.headers["x-forwarded-for"] as string || "").split(",")[0].trim() || "",
+      Submitter_IP:  "",
     };
 
     // ── 5. Guardar en Sheets ──
