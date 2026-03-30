@@ -1,0 +1,13 @@
+{
+  "name": "formulario-arcoprime",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "googleapis": "^144.0.0",
+    "busboy": "^1.6.0"
+  },
+  "devDependencies": {
+    "@vercel/node": "^3.0.0",
+    "typescript": "^5.0.0"
+  }
+}
